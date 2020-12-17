@@ -1,109 +1,109 @@
-# OHLASTS - Optimization of Heliostat Location and Aimpoint Strategies for Tower Systems 
+# HALOS - Heliostat Aimpoint and Layout Optimization Software 
 
 ## About
 This project develops a software decision tool that uses innovative optimization methods to determine the optimal aimpoint strategy and solar field layout of a concentrating solar power (CSP) central receiver plant. The software development is carried out at [National Renewable Energy Laboratory (NREL)](https://www.nrel.gov/) and is funded by the U.S. Department of Energy under the award number DE-EE00035930. 
 
-## Access
-Access to the repository is currently limited to project development team and to gain access contact [Alex Zolan](mailto://alexander.zolan@nrel.gov).
+<!---## Access
+Access to the repository is currently limited to project development team and to gain access contact [Alex Zolan](mailto://alexander.zolan@nrel.gov). --->
 
 ## SolarPilot Integration/Support
-SolarPilot is a design and optimization tool for concentrating solar power (CSP) central receiver plant developed by NREL and is available open source. OHLASTS provides access to SolarPilot through python API and SolarPilot can be used to populate flux/field into OHLASTS optimization model.
+SolarPilot is a design and optimization tool for concentrating solar power (CSP) central receiver plant developed by NREL and is available open source. HALOS provides access to SolarPilot through python API and SolarPilot can be used to populate flux/field into HALOS optimization model.
 * The [SolarPilot Python API](https://github.com/NREL/SolarPILOT/tree/copilot/deploy/api) is currently available within the [copilot](https://github.com/NREL/SolarPILOT/tree/copilot) branch of [SolarPilot](https://github.com/NREL/SolarPILOT). 
-* To integrate SolarPilot into OHLASTS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the OHLASTS directory at  "./OHLASTS/code/flux_model".  Within OHLASTS, [sp_module.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/sp_module.py) can be used to interact with SolarPilot.
+* To integrate SolarPilot into HALOS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the HALOS directory at  ".\HALOS\code".  Within HALOS, [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to interact with SolarPilot.
 * Microsoft Visual Studio 2019 or above is required for SolarPilot API to work. 
 
 ## Running Case Studies 
 
-Once SolarPilot is setup to work follow the following steps to run different cases.
+Once SolarPilot is setup to work, follow the following steps to run different cases.
 1. Create CSV files for inputs 
-    * Create a main CSV file that has the links to specific CSV input files, here's an [Example](https://github.com/NREL/OHLASTS/blob/develop/code/case_inputs/radial_50_ca_case.csv). 
+    * Create a main CSV file that has the links to specific CSV input files, here's an [Example](https://github.com/NREL/HALOS/blob/master/case_inputs/radial_50_ca_case.csv). 
     * Now create CSV files for receiver, settings and provide the path to weather file and field file (if using existing field). 
-    * Examples: [Receiver input CSV](https://github.com/NREL/OHLASTS/blob/develop/code/case_inputs/radial_dagget_50/extcyl_50MW.csv), [Settings](https://github.com/NREL/OHLASTS/blob/develop/code/case_inputs/radial_dagget_50/case_settings.csv)
-2. If running for single hour with DNI provided in receiver file, run [main.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/main.py). For annual simulation of aimpoint strategy use [ao_annual_case_study.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/ao_annual_case_study.py). 
-3. Follow step 2 for running OHLASTS only, SolarPilot only or both. 
-4. [sp_module.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/sp_module.py) can be used to obtain flux maps and field from SolarPilot using the Python API. 
+    * Examples: [Receiver input CSV](https://github.com/NREL/HALOS/blob/master/case_inputs/radial_dagget_50/extcyl_50MW.csv), [Settings](https://github.com/NREL/HALOS/blob/master/case_inputs/radial_dagget_50/case_settings.csv)
+2. If running for single hour with DNI provided in receiver file, run [main.py](https://github.com/NREL/HALOS/blob/master/code/main.py). For annual simulation of aimpoint strategy use [ao_annual_case_study.py](https://github.com/NREL/HALOS/blob/master/code/ao_annual_case_study.py). 
+3. Follow step 2 for running HALOS only, SolarPilot only or both. 
+4. [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to obtain flux maps and field from SolarPilot using the Python API. 
 
 ## Tool Organization
 
 The software's module files are described as follows: 
 
-### [main.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/main.py)
+### [main.py](https://github.com/NREL/HALOS/blob/master/code/main.py)
 This is the main aimpoint optimization module and is used to run a single case simulation. User can decide whether to decompose the problem or not. 
 
-### [annual_layout_optimize.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/annual_layout_optimize.py)
+### [annual_layout_optimize.py](https://github.com/NREL/HALOS/blob/master/code/annual_layout_optimize.py)
 Runs the layout optimization for a number of hours. 
 
-### [ao_annual_case_study.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/ao_annual_case_study.py)
+### [ao_annual_case_study.py](https://github.com/NREL/HALOS/blob/master/code/ao_annual_case_study.py)
 Runs the aimpoint optimization for a number of selected Hours. Creates a summary CSV file.
 
-### [case_study_flux_tests.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/case_study_flux_tests.py)
+### [case_study_flux_tests.py](https://github.com/NREL/HALOS/blob/master/code/case_study_flux_tests.py)
 This module is used to investigate performance and accuracy of image-shift approximation annually. 
 
-### [field.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/field.py)
+### [field.py](https://github.com/NREL/HALOS/blob/master/code/field.py)
 Reads field from file or uses SolarPilot to generate field. Divides field in sections using angle or distance.
 
-### [flux_method.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/flux_method.py)
+### [flux_method.py](https://github.com/NREL/HALOS/blob/master/code/flux_method.py)
 HALOS' flux calculator, uses Hermite expansion for flux characterization. 
 
-### [flux_model.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/flux_model.py)
+### [flux_model.py](https://github.com/NREL/HALOS/blob/master/code/flux_model.py)
 This module is used for creating models for flux modeling and outputting images to either a data file or an optimization model. It can also use SolarPilot to generate Flux images in parallel.
 
-### [geometry.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/geometry.py)
+### [geometry.py](https://github.com/NREL/HALOS/blob/master/code/geometry.py)
 Builds different type of receiver geometries and generates coordinates of aimpoints and measurement points. 
 
-### [heliostat.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/heliostat.py)
+### [heliostat.py](https://github.com/NREL/HALOS/blob/master/code/heliostat.py)
 Contains methods for modelling heliostats. 
 
-### [hermite_calculation.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/hermite_calculation.py)
+### [hermite_calculation.py](https://github.com/NREL/HALOS/blob/master/code/hermite_calculation.py)
 Calculates Hermite expansion for flux characterization.
 
-### [inputs.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/inputs.py)
+### [inputs.py](https://github.com/NREL/HALOS/blob/master/code/inputs.py)
 Inputs reading module. Creates receiver and flux model from input csv data. 
 
-### [mirror_model.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/mirror_model.py)
+### [mirror_model.py](https://github.com/NREL/HALOS/blob/master/code/mirror_model.py)
 Mirror and slope error characterization model. 
 
-### [opt_heuristic.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/opt_heuristic.py)
+### [opt_heuristic.py](https://github.com/NREL/HALOS/blob/master/code/opt_heuristic.py)
 This module includes heuristics that can generate an initial feasible solution to the aimpoint strategy optimization model.
 
-### [optimize_aimpoint.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/optimize_aimpoint.py)
+### [optimize_aimpoint.py](https://github.com/NREL/HALOS/blob/master/code/optimize_aimpoint.py)
 This module contains the aimpoint optimization model, which is implemented in the Pyomo modeling language.
 
-### [plotting.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/plotting.py)
+### [plotting.py](https://github.com/NREL/HALOS/blob/master/code/plotting.py)
 Contains code for creating different types of plots. 
 
-### [process_aimpoint_outputs.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/process_aimpoint_outputs.py)
+### [process_aimpoint_outputs.py](https://github.com/NREL/HALOS/blob/master/code/process_aimpoint_outputs.py)
 Serves as aimpoint optimization model's output processing module.
 
-### [run_hourly_case.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/run_hourly_case.py)
+### [run_hourly_case.py](https://github.com/NREL/HALOS/blob/master/code/run_hourly_case.py)
 Runs a single hour simulation for layout optimization. 
 
-### [single_hour_for_annual.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/single_hour_for_annual.py)
+### [single_hour_for_annual.py](https://github.com/NREL/HALOS/blob/master/code/single_hour_for_annual.py)
 Runs a single hour at a time for annual aimpoint optimization simulation. 
 
-### [sol_pos.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/sol_pos.py)
+### [sol_pos.py](https://github.com/NREL/HALOS/blob/master/code/sol_pos.py)
 Solar Positioning module. Calculates solar azimuth and zenith. 
 
-### [solve_aim_model.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/solve_aim_model.py)
+### [solve_aim_model.py](https://github.com/NREL/HALOS/blob/master/code/solve_aim_model.py)
 Solves aimpoint optimization model, either directly or using decomposition approach. 
 
-### [sp_aimpoint_heuristic.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/sp_aimpoint_heuristic.py)
+### [sp_aimpoint_heuristic.py](https://github.com/NREL/HALOS/blob/master/code/sp_aimpoint_heuristic.py)
 This module contains aimpoint heuristics using SolarPILOT flux calculations. Removes heliostats to overcome flux violation at the receiver for SolarPilot. 
 
-### [sp_module.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/sp_module.py)
+### [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py)
 HALOS and SolarPilot (python API) integration module. Interacts with Solarpilot API and generates field and flux images for different cases.
 
-### [sun_shape.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/sun_shape.py)
+### [sun_shape.py](https://github.com/NREL/HALOS/blob/master/code/sun_shape.py)
 This module contains source code for building sun shape objects and their related error models.
 
-### [Toolbox.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/Toolbox.py) 
+### [Toolbox.py](https://github.com/NREL/HALOS/blob/master/code/Toolbox.py) 
 Classes for points, vectors, and their operations. 
 
-### [WELL512.py](https://github.com/NREL/OHLASTS/blob/develop/code/flux_model/WELL512.py)
+### [WELL512.py](https://github.com/NREL/HALOS/blob/master/code/WELL512.py)
 Random number generator. An implementation of the WELL512a RNG created by L'Ecuyer and Matsumoto, originally programmed in C.
  
 
-## [Inputs](https://github.com/NREL/OHLASTS/tree/develop/code/case_inputs)
+## [Inputs](https://github.com/NREL/HALOS/tree/master/case_inputs)
 
 This section defines the inputs for the optimization model and Solarpilot Python API.
 
@@ -163,7 +163,7 @@ The receiver input csv has the following parameters
 
 ## External libraries
 
-Open source packages used in OHLASTS:
+Open source packages used in HALOS:
 
 | Project | Version | Usage |
 |---------|---------|-------|
