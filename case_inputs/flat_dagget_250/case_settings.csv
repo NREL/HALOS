@@ -1,0 +1,7 @@
+mirror_model,SinglePointGaussian
+method,SimpleNormalFluxCalc
+num_sections,8
+section_method,angle
+use_sp_flux,1
+hour_idx,4311
+use_sp_field,1
