@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS 
+HALOS
 sun_shape module
 This module contains source code for building sun shape objects and their 
 related error models.

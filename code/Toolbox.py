@@ -1,5 +1,5 @@
 """
-OHLASTS model
+HALOS model
 
 Classes for Points and Vectors
 and their operations

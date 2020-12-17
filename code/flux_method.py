@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 
-OHLASTS miscellaneous scripts
+HALOS Flux Calculator
 
 This module calculates a Hermite expansion 
 

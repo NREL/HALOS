@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS main module
+HALOS main module
 
 This module creates a flux_model object according to user inputs, then creates
 an instance of the aimpoint strategy optimization model.

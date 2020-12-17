@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS SolarPILOT API aimpoint heuristic
+HALOS SolarPILOT API aimpoint heuristic
 
 This module contains aimpoint heuristics using SolarPILOT flux calculations.
 """

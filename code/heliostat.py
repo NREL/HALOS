@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS model
+HALOS model
 Heliostat class and methods
 """
 

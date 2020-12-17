@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS model
+HALOS model
 Mirror and slope error model
 """
 import scipy.stats

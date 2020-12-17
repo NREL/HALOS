@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 
-OHLASTS miscellaneous scripts
+HALOS miscellaneous scripts
 
 This module calculates a Hermite expansion 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS 
+HALOS
 flux_model module
 Framework for building out models for flux modeling and outputting images
 to either a data file or an optimization model.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLAST Field Module
+HALOS Field Module
 
 Reads field from file or uses SolarPilot to generate field 
 """

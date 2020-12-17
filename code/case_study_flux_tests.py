@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-OHLASTS Case Studies
+HALOS Case Studies
 
 This script will be used to run the milestone 2.1 tests.
 
@@ -15,7 +15,7 @@ Current Outputs:
     3. Yearly simulation for the hours when dni is more than 500 - (YearlyTestCase).
 """
 
-## OHLASTS Modules 
+## HALOS Modules 
 import flux_model
 import flux_method
 import sun_shape
