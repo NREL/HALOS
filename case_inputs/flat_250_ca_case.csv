@@ -1,6 +1,5 @@
-field_filename,./../solarpilot_cases/flat-daggett-250.csv
+field_filename,./../sample_fields/flat-daggett-250.csv
 receiver_filename,./../case_inputs/flat_dagget_250/flat_plate_250MW.csv
 mirror_filename,./../case_inputs/sp_gaussian_mirror.csv
 settings,./../case_inputs/flat_dagget_250/case_settings.csv
 weather_filename,./../weather_files/USA NV Tonopah Airport (TMY3).csv
-sp_inputs,./../case_inputs/sp_case_study_inputs.csv

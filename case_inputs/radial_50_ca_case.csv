@@ -1,6 +1,5 @@
-field_filename,./../solarpilot_cases/radial-daggett-50.csv
+field_filename,./../sample_fields/radial-daggett-50.csv
 receiver_filename,./../case_inputs/radial_dagget_50/extcyl_50MW.csv
 mirror_filename,./../case_inputs/sp_gaussian_mirror.csv
 settings,./../case_inputs/radial_dagget_50/case_settings.csv
 weather_filename,./../weather_files/USA NV Tonopah Airport (TMY3).csv
-sp_inputs,./../case_inputs/sp_case_study_inputs.csv
