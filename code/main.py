@@ -11,7 +11,6 @@ import solve_aim_model
 
 if __name__ == "__main__":
     case_filename = "./../case_inputs/radial_50_ca_case.csv"
-    #case_filename = "./../case_inputs/radial_tonopah.csv"
     case_name = "radial_daggett_50"
   
     
