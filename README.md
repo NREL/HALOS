@@ -6,22 +6,22 @@ This project develops a software decision tool that uses innovative optimization
 <!---## Access
 Access to the repository is currently limited to project development team and to gain access contact [Alex Zolan](mailto://alexander.zolan@nrel.gov). --->
 
-## SolarPilot Integration/Support
-SolarPilot is a design and optimization tool for concentrating solar power (CSP) central receiver plant developed by NREL and is available open source. HALOS provides access to SolarPilot through python API and SolarPilot can be used to populate flux/field into HALOS optimization model.
-* The [SolarPilot Python API](https://github.com/NREL/SolarPILOT/tree/copilot/deploy/api) is currently available within the [copilot](https://github.com/NREL/SolarPILOT/tree/copilot) branch of [SolarPilot](https://github.com/NREL/SolarPILOT). 
-* To integrate SolarPilot into HALOS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the HALOS directory at  ".\HALOS\code".  Within HALOS, [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to interact with SolarPilot.
-* Microsoft Visual Studio 2019 or above is required for SolarPilot API to work. 
+## SolarPILOT Integration/Support
+SolarPILOT is a design and optimization tool for concentrating solar power (CSP) central receiver plant developed by NREL and is available open source. HALOS provides access to SolarPILOT through python API and SolarPILOT can be used to populate flux/field into HALOS optimization model.
+* The [SolarPILOT Python API](https://github.com/NREL/SolarPILOT/tree/copilot/deploy/api) is currently available within the [copilot](https://github.com/NREL/SolarPILOT/tree/copilot) branch of [SolarPILOT](https://github.com/NREL/SolarPILOT). 
+* To integrate SSolarPILOT into HALOS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the HALOS directory at  ".\HALOS\code".  Within HALOS, [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to interact with SolarPilot.
+* Microsoft Visual Studio 2019 or above is required for SolarPILOT API to work. 
 
 ## Running Case Studies 
 
-Once SolarPilot is setup to work, follow the following steps to run different cases.
+Once SolarPILOT is setup to work, follow the following steps to run different cases.
 1. Create CSV files for inputs 
     * Create a main CSV file that has the links to specific CSV input files, here's an [Example](https://github.com/NREL/HALOS/blob/master/case_inputs/radial_50_ca_case.csv). 
     * Now create CSV files for receiver, settings and provide the path to weather file and field file (if using existing field). 
     * Examples: [Receiver input CSV](https://github.com/NREL/HALOS/blob/master/case_inputs/radial_dagget_50/extcyl_50MW.csv), [Settings](https://github.com/NREL/HALOS/blob/master/case_inputs/radial_dagget_50/case_settings.csv)
 2. If running for single hour with DNI provided in receiver file, run [main.py](https://github.com/NREL/HALOS/blob/master/code/main.py). For annual simulation of aimpoint strategy use [ao_annual_case_study.py](https://github.com/NREL/HALOS/blob/master/code/ao_annual_case_study.py). 
-3. Follow step 2 for running HALOS only, SolarPilot only or both. 
-4. [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to obtain flux maps and field from SolarPilot using the Python API. 
+3. Follow step 2 for running HALOS only, SolarPILOT only or both. 
+4. [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to obtain flux maps and field from SolarPILOT using the Python API. 
 
 ## Tool Organization
 
@@ -105,7 +105,7 @@ Random number generator. An implementation of the WELL512a RNG created by L'Ecuy
 
 ## [Inputs](https://github.com/NREL/HALOS/tree/master/case_inputs)
 
-This section defines the inputs for the optimization model and Solarpilot Python API.
+This section defines the inputs for the optimization model and SolarPILOT Python API.
 
 ## 1. Main Case File
 The main input CSV file is used to assign paths to CSV files and the parameters are defined as:
@@ -127,8 +127,8 @@ The case_setting file contains the following parameters.
 | method | String | Flux Calculation method for HALOS | SimpleNormalFluxCalc |
 | num_sections | Integer | Number of field subsections | 8 |
 | section_method | String | Method for field Subsectioning (angle/distance) | angle |
-| use_sp_flux | Integer | Boolean (1/0): Use SolarPilot to calculate Flux | 1 |
-| use_sp_field | Integer | Boolean (1/0): Use SolarPilot to generate field | 1 |
+| use_sp_flux | Integer | Boolean (1/0): Use SolarPILOT to calculate Flux | 1 |
+| use_sp_field | Integer | Boolean (1/0): Use SolarPILOT to generate field | 1 |
 | hour_idx | Integer | Simulation hour index from weather file | 4311 |
 | heliostat_group_size | Integer | Heliostat group size to focus on same aimpoint | 4 |
 
