@@ -1,0 +1,25 @@
+tow_height,150
+length,21
+height,17
+pts_per_dim,20
+zenith_deg,90
+azimuth_deg,180
+rec_cent_offset_x,0
+rec_cent_offset_y,0
+rec_cent_offset_z,0
+aim_rows,7
+aim_cols,7
+aim_h_margin,0
+aim_v_margin,0
+power_rating,5.00E+07
+receiver_type,External cylindrical
+diameter,10.38
+n_panels,6
+field_dni,950
+flux_dni,950
+mirror_len,12.2
+mirror_ht,12.2
+mirror_area,148.84
+flux_ub,1000
+flux_lb,0
+n_circulation,5
