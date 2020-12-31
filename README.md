@@ -12,6 +12,12 @@ SolarPILOT is a design and optimization tool for concentrating solar power (CSP)
 * To integrate SSolarPILOT into HALOS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the HALOS directory at  ".\HALOS\code".  Within HALOS, [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to interact with SolarPilot.
 * Microsoft Visual Studio 2019 or above is required for SolarPILOT API to work. 
 
+## Cbc setup
+HALOS is implmemented in Python 3.7 and uses Pyomo, an algebraic modeling language implemented in Python for its optimization model.  While a large collection of solvers are accessible to Pyomo, the default solver used in HALOS is Cbc.  The following steps will allow Cbc to be accessible within HALOS on Windows systems:
+* Download the Cbc binary at its [Bintray location](https://bintray.com/coin-or/download/Cbc/2.9).
+* Add the folder location of the binary to the PATH environment variable
+After adding this folder, placing binaries of other solvers that work with Pyomo in the same folder should allow access from Pyomo models.   
+
 ## Running Case Studies 
 
 Once SolarPILOT is setup to work, follow the following steps to run different cases.
