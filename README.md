@@ -9,7 +9,7 @@ Access to the repository is currently limited to project development team and to
 ## SolarPILOT Integration/Support
 SolarPILOT is a design and optimization tool for concentrating solar power (CSP) central receiver plant developed by NREL and is available open source. HALOS provides access to SolarPILOT through python API and SolarPILOT can be used to populate flux/field into HALOS optimization model.
 * The [SolarPILOT Python API](https://github.com/NREL/SolarPILOT/tree/copilot/deploy/api) is currently available within the [copilot](https://github.com/NREL/SolarPILOT/tree/copilot) branch of [SolarPILOT](https://github.com/NREL/SolarPILOT). 
-* To integrate SSolarPILOT into HALOS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the HALOS directory at  ".\HALOS\code".  Within HALOS, [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to interact with SolarPilot.
+* To integrate SolarPILOT into HALOS, [solarpilot.dll](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/solarpilot.dll) and [copylot.py](https://github.com/NREL/SolarPILOT/blob/copilot/deploy/api/copylot.py) have to be in the HALOS directory at  ".\HALOS\code".  Within HALOS, [sp_module.py](https://github.com/NREL/HALOS/blob/master/code/sp_module.py) can be used to interact with SolarPilot.
 * Microsoft Visual Studio 2019 or above is required for SolarPILOT API to work. 
 
 ## Solver Binary Setup
