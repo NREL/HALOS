@@ -91,12 +91,12 @@ class Field(object):
             
     def GetFieldFromFile(self,filename, params):
         """
-        Reads fiel CSV file
+        Reads field CSV file
 
         Parameters
         ----------
         filename : Field Filename
-            DESCRIPTION.
+            path to file containing solar field heliostat positions.
         params : Dict
             Contains parameters for field subsection
 
@@ -106,6 +106,9 @@ class Field(object):
 
         """
         df = pandas.read_csv(filename)
+        if params.get("hold_sp_rejects")    :
+            self.rejected_df = df[df["in_field"] == 0]
+            df = df[df["in_field"] == 1]
         self.x = df["Pos-x"].values
         self.y = df["Pos-y"].values
         self.z = df["Pos-z"].values
@@ -177,6 +180,15 @@ class Field(object):
         self.section_flux = [
             sum([self.eff[idx] for idx in self.helios_by_section[s]])
             / sum(self.eff) for s in range(self.num_sections)]
+        self.min_angles = [
+            min([self.polar_angles[idx] for idx in self.helios_by_section[s]]) for s in range(self.num_sections)
+        ]
+
+    def getMinAngleBySection(self):
+        self.min_angles = []
+        for section_idx in range(num_sections):
+            self.min_angles.append()
+
 
     
     def getSectionsByDistance(self, num_sections):
@@ -218,13 +230,15 @@ if __name__ == "__main__":
     import inputs
 
     case_filename = "./../case_inputs/flat_50_ca_case.csv"
-    filenames = inputs.readCaseFile(case_filename)
+    filenames = {"field_filename": "radial-250-daggett-layout.csv"}
     params = {}
     params["num_sections"] = 8
     params["section_method"] = "angle"
     params["mirror_area"] = 100
+    params["hold_sp_rejects"] = True
     field = Field(filenames, params, use_sp_field = False)
-
+    print(field.min_angles)
+    print(field.rejected_df)
     if True:
         x = []
         y = []
@@ -240,4 +254,3 @@ if __name__ == "__main__":
         plt.cla()
         plt.clf()
 
-        
