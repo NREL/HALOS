@@ -23,6 +23,10 @@ class Field(object):
             self.num_heliostats = 0
             self.mirror_area = params["mirror_area"]
             self.eff = []
+            self.rej_x = []
+            self.rej_y = []
+            self.rej_z = []
+            self.rej_coords = numpy.array([self.rej_x, self.rej_y, self.rej_z]).transpose()
         elif use_sp_field:
             self.GetFieldFromSP(filenames,params)
         else: 
@@ -131,13 +135,14 @@ class Field(object):
             print("Warning: no sections mentioned in field parameters.")
                     
         
-    def getPolarAngles(self):
+    def getPolarAngles(self, rejected = False):
         """
         obtains distance (m) and polar angle coordinate (rad) of each heliostat
         
         Parameters
         ----------
-        None
+        rejected : Bool
+            calculate the polar angle of rejected heliostats if True
     
         Returns
         -------
@@ -150,8 +155,16 @@ class Field(object):
         self.polar_angles = (
             (self.y >= 0) *  self.polar_angles + 
             (self.y < 0 ) * (2 * numpy.pi - self.polar_angles) 
-        ) 
-        
+        )
+        if rejected:
+            self.rej_distance = numpy.sqrt(self.y ** 2 + self.x ** 2)
+            self.rej_polar_angles = numpy.arccos(self.x / self.distance)
+            # if y < 0, result is 2pi - theta
+            self.rej_polar_angles = (
+                    (self.y >= 0) * self.polar_angles +
+                    (self.y < 0) * (2 * numpy.pi - self.polar_angles)
+            )
+
     def getSectionsByPolarAngle(self, num_sections):
         """
         Subdivides the field into sections by sorting the field by angle w.r.t.
@@ -180,16 +193,43 @@ class Field(object):
         self.section_flux = [
             sum([self.eff[idx] for idx in self.helios_by_section[s]])
             / sum(self.eff) for s in range(self.num_sections)]
-        self.min_angles = [
-            min([self.polar_angles[idx] for idx in self.helios_by_section[s]]) for s in range(self.num_sections)
-        ]
-
-    def getMinAngleBySection(self):
-        self.min_angles = []
-        for section_idx in range(num_sections):
-            self.min_angles.append()
+        self.min_angles = [min([self.polar_angles[idx] for idx in self.helios_by_section[s]])
+                           for s in range(self.num_sections)]
 
 
+    def getSectionsForRejectedHeliostats(self):
+        """
+        Assigns a section to each rejected heliostat.
+        """
+        self.rej_x = self.rejected_df["Pos-x"].values
+        self.rej_y = self.rejected_df["Pos-y"].values
+        self.rej_z = self.rejected_df["Pos-z"].values
+        self.rej_coords = numpy.array([self.rej_x, self.rej_y, self.rej_z]).transpose()
+        self.rej_annual_power = self.rejected_df["annual_power"].values
+        self.rej_section_ids = numpy.zeros(self.rej_coords.size)
+        self.getPolarAngles(rejected=True)
+        for ridx in range(self.rej_x.size):
+            self.rej_section_ids[ridx] = self.getRejSectionID(ridx)
+
+
+    def getRejSectionID(self, ridx):
+        """
+        assigns a section ID for a rejected heliostat, using its polar angle as input.
+
+        Parameters
+            ridx : Int
+                rejected heliostat index
+        Returns
+            section_idx : Int
+                section identifier
+        """
+        for section_idx in range(1,self.num_sections-1):
+            if self.rej_polar_angles[ridx] <= self.min_angles[section_idx+1]:
+                return section_idx
+        return self.num_sections-1
+
+    def getUtilizationStats(self, util_filename):
+        pass
     
     def getSectionsByDistance(self, num_sections):
         """
@@ -220,7 +260,7 @@ class Field(object):
             for idx in range(num_helios_by_section[section_idx])]))) 
         self.section_flux = [
             sum([self.eff[idx] for idx in self.helios_by_section[s]])
-            / sum(self.eff) for s in range(self.num_sections)] 
+            / sum(self.eff) for s in range(self.num_sections)]
         
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -237,9 +277,9 @@ if __name__ == "__main__":
     params["mirror_area"] = 100
     params["hold_sp_rejects"] = True
     field = Field(filenames, params, use_sp_field = False)
-    print(field.min_angles)
-    print(field.rejected_df)
-    if True:
+    field.getSectionsForRejectedHeliostats()
+    print(field.rej_section_ids)
+    if False:
         x = []
         y = []
         col = []
