@@ -27,6 +27,13 @@ class Field(object):
             self.rej_y = []
             self.rej_z = []
             self.rej_coords = numpy.array([self.rej_x, self.rej_y, self.rej_z]).transpose()
+            self.utilization_by_section = []
+            self.min_utilization_by_section = []
+            self.distance = []
+            self.polar_angles = []
+            self.rej_distance = []
+            self.rej_polar_angles = []
+            self.rej_annual_power = []
         elif use_sp_field:
             self.GetFieldFromSP(filenames,params)
         else: 
@@ -217,20 +224,49 @@ class Field(object):
         assigns a section ID for a rejected heliostat, using its polar angle as input.
 
         Parameters
-            ridx : Int
-                rejected heliostat index
+        ----------
+        ridx : Int
+            rejected heliostat index
         Returns
-            section_idx : Int
-                section identifier
+        -------
+        section_idx : Int
+            section identifier
         """
         for section_idx in range(1,self.num_sections-1):
             if self.rej_polar_angles[ridx] <= self.min_angles[section_idx+1]:
                 return section_idx
         return self.num_sections-1
 
-    def getUtilizationStats(self, util_filename):
-        pass
-    
+
+    def getUtilizationStats(self, case_name, periods):
+        """
+        gets utilization stats by obtaining period-specific utilization by section from flat files, then averaging
+        them over time.
+
+        Parameters
+        ----------
+        case_name -- case identifier
+
+        Returns
+        -------
+        None: assigns self.utilization_by_section
+        """
+        self.utilization_by_section = numpy.zeros(self.num_sections, dtype=float)
+        self.min_utilization_by_section = numpy.ones(self.num_sections, dtype=float)
+        for period in periods:
+            filename = case_name+str(period)+"_utilization.csv"
+            print(filename)
+            fin = open(filename,'r')
+            print(period)
+            lines = fin.readlines()
+            print(lines)
+            sline = lines[0].split(",")
+            for i in range(self.num_sections):
+                self.utilization_by_section[i] += float(sline[i])
+                self.min_utilization_by_section[i] = min(self.min_utilization_by_section[i], float(sline[i]) )
+        self.utilization_by_section /= len(periods)
+
+
     def getSectionsByDistance(self, num_sections):
         """
         Subdivides the field into sections by distance from the receiver 
@@ -272,13 +308,21 @@ if __name__ == "__main__":
     case_filename = "./../case_inputs/flat_50_ca_case.csv"
     filenames = {"field_filename": "radial-250-daggett-layout.csv"}
     params = {}
-    params["num_sections"] = 8
+    params["num_sections"] = 16
     params["section_method"] = "angle"
     params["mirror_area"] = 100
     params["hold_sp_rejects"] = True
     field = Field(filenames, params, use_sp_field = False)
     field.getSectionsForRejectedHeliostats()
     print(field.rej_section_ids)
+    import annual_layout_optimize
+    case_filename = "./../case_inputs/radial_250_ca_case.csv"
+    case_name = "radial-250-daggett"
+    periods = annual_layout_optimize.getHourIDs(case_filename)
+    field.getUtilizationStats(case_name, periods)
+    print(field.utilization_by_section)
+    print(field.min_utilization_by_section)
+    print(field.min_utilization_by_section.argsort())
     if False:
         x = []
         y = []
