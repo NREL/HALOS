@@ -117,7 +117,7 @@ class Field(object):
 
         """
         df = pandas.read_csv(filename)
-        if params.get("hold_sp_rejects")    :
+        if params.get("hold_sp_rejects"):
             self.rejected_df = df[df["in_field"] == 0]
             df = df[df["in_field"] == 1]
         self.x = df["Pos-x"].values
@@ -213,7 +213,7 @@ class Field(object):
         self.rej_z = self.rejected_df["Pos-z"].values
         self.rej_coords = numpy.array([self.rej_x, self.rej_y, self.rej_z]).transpose()
         self.rej_annual_power = self.rejected_df["annual_power"].values
-        self.rej_section_ids = numpy.zeros(self.rej_coords.size)
+        self.rej_section_ids = numpy.zeros(self.rej_coords.size, dtype=int)
         self.getPolarAngles(rejected=True)
         for ridx in range(self.rej_x.size):
             self.rej_section_ids[ridx] = self.getRejSectionID(ridx)
@@ -255,11 +255,8 @@ class Field(object):
         self.min_utilization_by_section = numpy.ones(self.num_sections, dtype=float)
         for period in periods:
             filename = case_name+str(period)+"_utilization.csv"
-            print(filename)
             fin = open(filename,'r')
-            print(period)
             lines = fin.readlines()
-            print(lines)
             sline = lines[0].split(",")
             for i in range(self.num_sections):
                 self.utilization_by_section[i] += float(sline[i])
@@ -270,19 +267,47 @@ class Field(object):
     def updateFieldForUtilization(self, threshold = 0.995):
         fully_utilized_sections = self.utilization_by_section > 0.9999
         sections_to_replace = self.utilization_by_section < threshold
+        n_replaced = 0
         for sidx in range(self.num_sections):
-            if self.sections_to_replace[idx]:
+            if sections_to_replace[sidx]:
                 # replace max mirrors defocused
                 num_helios = int(len(self.helios_by_section[sidx])*(1-self.min_utilization_by_section[sidx]))
                 for idx in range(num_helios):
                     replaced = self.replaceHeliostat(fully_utilized_sections,sidx)
-                    if not replaced: return
+                    n_replaced += 1
+                    if not replaced:
+                        return
+        return
 
 
     def replaceHeliostat(self, fully_utilized_sections, sidx):
-        existing_idx = self.getMinEffHelioInSection(sidx)
+        #Find existing heliostat to replace, rejected heliostat to introduce
+        #existing_idx = self.getMinEffHelioInSection(sidx)
+        existing_idx = self.getMaxDistHelioInSection(sidx)
         replace_idx = self.findMaxPowerReplaceableHelio()
+        if replace_idx == -1:
+            return False
+        #update coordinates
+        self.x[existing_idx] = self.rej_x[replace_idx]
+        self.y[existing_idx] = self.rej_y[replace_idx]
+        self.z[existing_idx] = self.rej_z[replace_idx]
+        self.coords[existing_idx] = self.coords[existing_idx]
+        self.helios_by_section[sidx].remove(existing_idx)
+        self.helios_by_section[self.rej_section_ids[replace_idx]].append(existing_idx)
+        #update efficiency, dist, annual power so heliostats aren't replaced again
+        self.eff[existing_idx] = 1.0
+        self.distance[existing_idx] = 0.0
+        self.rej_annual_power[replace_idx] = 0.0
+        return True
 
+    def getMaxDistHelioInSection(self, sidx):
+        max_dist = 0.0
+        max_idx = -1
+        for hidx in self.helios_by_section[sidx]:
+            if self.distance[hidx] > max_dist:
+                max_idx = hidx
+                max_dist = self.distance[hidx]
+        return max_idx
 
     def getMinEffHelioInSection(self, sidx):
         min_eff = 1.0
@@ -296,18 +321,13 @@ class Field(object):
 
     def findMaxPowerReplaceableHelio(self):
         replaced = False
-        while not replaced:
-            pass
-
-
-
-    def replaceHeliostat(self, existing_idx, replace_idx, existing_section):
-        self.x[existing_idx] = self.rej_x[replace_idx]
-        self.y[existing_idx] = self.rej_y[replace_idx]
-        self.z[existing_idx] = self.rej_z[replace_idx]
-        self.coords[existing_idx] = self.coords[existing_idx]
-        self.helios_by_section[existing_section].remove(existing_idx)
-        self.helios_by_section[self.rej_section_ids[replace_idx]].append(existing_idx)
+        max_power = 1.0 #don't count any rejected heliostats whose annual power has been set to zero
+        replace_idx = -1
+        for ridx in range(len(self.rej_x)):
+            if self.rej_annual_power[ridx] > max_power and self.utilization_by_section[self.rej_section_ids[ridx]] > 0.9999:
+                replace_idx = ridx
+            max_power = self.rej_annual_power[ridx]
+        return replace_idx
 
 
     def getSectionsByDistance(self, num_sections):
@@ -357,15 +377,19 @@ if __name__ == "__main__":
     params["hold_sp_rejects"] = True
     field = Field(filenames, params, use_sp_field = False)
     field.getSectionsForRejectedHeliostats()
-    print(field.rej_section_ids)
+    # print(field.rej_section_ids)
     import annual_layout_optimize
     case_filename = "./../case_inputs/radial_250_ca_case.csv"
     case_name = "radial-250-daggett"
+    new_field_filename = case_name + "_rev_field.csv"
     periods = annual_layout_optimize.getHourIDs(case_filename)
     field.getUtilizationStats(case_name, periods)
-    print(field.utilization_by_section)
-    print(field.min_utilization_by_section)
-    print(field.min_utilization_by_section.argsort())
+    field.updateFieldForUtilization(0.995)
+    field.outputToFile()
+    print(field.eff)
+    # print(field.utilization_by_section)
+    # print(field.min_utilization_by_section)
+    # print(field.min_utilization_by_section.argsort())
     if False:
         x = []
         y = []
