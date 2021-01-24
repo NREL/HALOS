@@ -89,6 +89,9 @@ class AimpointOptimizer(object):
         self.flux_model = flux_model
         self.model = pe.ConcreteModel()
         self.params["flux_constraint_limit"] = 500 /params["num_sections"]
+        self.solver = params.get("solver")
+        if self.solver is None:
+            self.solver = "cplex"
 
     def generateMeasurementSubset(self):
         measurement_points = []
@@ -328,7 +331,7 @@ class AimpointOptimizer(object):
         self.genConstraintsBinOnly()
 
 
-    def optimize(self, mipgap=0.01, timelimit=300, solver='cbc', tee=False, keepfiles=False, warmstart=False): 
+    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
         """
         Solves the optimization model 
 
@@ -357,15 +360,15 @@ class AimpointOptimizer(object):
             import opt_heuristic
             heuristic = opt_heuristic.AcceptRejectHeuristic(3)
             heuristic.getIFS(self.model)
-        opt = pe.SolverFactory(solver)
-        if solver == "cbc":
+        opt = pe.SolverFactory(self.solver)
+        if self.solver == "cbc":
             opt.options["ratioGap"] = mipgap
             opt.options["seconds"] = timelimit
-        elif solver == "glpk":
+        elif self.solver == "glpk":
             opt.options["mipgap"] = mipgap
             opt.options["tmlim"] = timelimit
             opt.options["cuts"] = 1
-        elif solver == "cplex":
+        elif self.solver == "cplex":
             opt.options["mipgap"] = mipgap
             opt.options["timelimit"] = timelimit
         else:
