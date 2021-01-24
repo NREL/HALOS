@@ -267,6 +267,49 @@ class Field(object):
         self.utilization_by_section /= len(periods)
 
 
+    def updateFieldForUtilization(self, threshold = 0.995):
+        fully_utilized_sections = self.utilization_by_section > 0.9999
+        sections_to_replace = self.utilization_by_section < threshold
+        for sidx in range(self.num_sections):
+            if self.sections_to_replace[idx]:
+                # replace max mirrors defocused
+                num_helios = int(len(self.helios_by_section[sidx])*(1-self.min_utilization_by_section[sidx]))
+                for idx in range(num_helios):
+                    replaced = self.replaceHeliostat(fully_utilized_sections,sidx)
+                    if not replaced: return
+
+
+    def replaceHeliostat(self, fully_utilized_sections, sidx):
+        existing_idx = self.getMinEffHelioInSection(sidx)
+        replace_idx = self.findMaxPowerReplaceableHelio()
+
+
+    def getMinEffHelioInSection(self, sidx):
+        min_eff = 1.0
+        min_idx = -1
+        for hidx in self.helios_by_section[sidx]:
+            if self.eff[hidx] < min_eff:
+                min_idx = hidx
+                min_eff = self.eff[hidx]
+        return min_idx
+
+
+    def findMaxPowerReplaceableHelio(self):
+        replaced = False
+        while not replaced:
+            pass
+
+
+
+    def replaceHeliostat(self, existing_idx, replace_idx, existing_section):
+        self.x[existing_idx] = self.rej_x[replace_idx]
+        self.y[existing_idx] = self.rej_y[replace_idx]
+        self.z[existing_idx] = self.rej_z[replace_idx]
+        self.coords[existing_idx] = self.coords[existing_idx]
+        self.helios_by_section[existing_section].remove(existing_idx)
+        self.helios_by_section[self.rej_section_ids[replace_idx]].append(existing_idx)
+
+
     def getSectionsByDistance(self, num_sections):
         """
         Subdivides the field into sections by distance from the receiver 
