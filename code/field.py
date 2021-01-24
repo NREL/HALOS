@@ -330,6 +330,14 @@ class Field(object):
         return replace_idx
 
 
+    def outputFieldToFile(self, filename):
+        outfile = open(filename, 'w')
+        outfile.write('id,Pos-x,Pos-y,Pos-z\n')
+        for hidx in range(len(self.x)):
+            outfile.write(str(hidx)+","+str(self.x[hidx])+","+str(self.y[hidx])+","+str(self.z[hidx])+"\n")
+        outfile.close()
+
+
     def getSectionsByDistance(self, num_sections):
         """
         Subdivides the field into sections by distance from the receiver 
@@ -385,7 +393,7 @@ if __name__ == "__main__":
     periods = annual_layout_optimize.getHourIDs(case_filename)
     field.getUtilizationStats(case_name, periods)
     field.updateFieldForUtilization(0.995)
-    field.outputToFile()
+    field.outputFieldToFile(new_field_filename)
     print(field.eff)
     # print(field.utilization_by_section)
     # print(field.min_utilization_by_section)
