@@ -72,7 +72,7 @@ def ReadWeatherFile(weather_file, get_angles=False):
 
 class FluxModel(object):
     def __init__(self,sun_shape, mirror_shape, receiver, flux_method, 
-                 weather_file, field, filenames = None,hour_id = None, 
+                 weather_file, field, filenames = None, hour_id = None,
                  use_sp_flux = False, dni = None):
         self.sun_shape = sun_shape
         self.mirror_shape = mirror_shape
@@ -87,10 +87,15 @@ class FluxModel(object):
             self.dni = self.receiver.dni
         elif self.hour_id != None: 
             self.dni = self.weather_data['dni'][hour_id]
+        elif dni != None:
+            self.dni = dni
         else: 
             msg = "No inputs given for DNI."
             raise Exception(msg)
-        self.get_sp_flux_parallel()
+        if use_sp_flux:
+            self.get_sp_flux_parallel()
+        else:
+            self.get_halos_native_flux()
         if self.receiver.params["receiver_type"] == "External cylindrical":
             print("Generating Fraction Maps")
             self.getFractionMap()
@@ -160,7 +165,7 @@ class FluxModel(object):
         else:
             full_map = numpy.zeros_like(self.receiver.x)
             for i in range(self.field.num_heliostats): 
-                full_map += self.GenerateSingleFluxMap(i,aimpoints[i],solar_vector,self.dni,approx)
+                full_map += self.GenerateSingleFluxMap(i,aimpoints[i],solar_vector,approx)
         return full_map
 
 
@@ -184,11 +189,42 @@ class FluxModel(object):
 
         """
         flux = {}
-        for h in self.field.helios_by_section[section_id]:
-            flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni)
-            flux[h] = numpy.array(flux_map) 
+        if self.use_sp_flux:
+            for h in self.field.helios_by_section[section_id]:
+                flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni)
+                flux[h] = numpy.array(flux_map)
+        else:
+            for h in self.field.helios_by_section[section_id]:
+                if self.receiver.params["receiver_type"] == "Flat plate":
+                    center_idx = len(self.receiver.aimpoints) // 2
+                else:
+                    center_idx = len(self.receiver.aimpoints[h]) // 2
+                solar_vector = self.getSolarVector(self.weather_data["solar_azimuth"][self.hour_id], self.weather_data["solar_zenith"][self.hour_id])
+                flux_map = self.GenerateSingleFluxMap(h, center_idx, solar_vector, True)
+                flux[h] = numpy.array(flux_map)
         return flux
 
+    def get_halos_native_flux(self):
+        """
+        Get flux map per heliostat in parallel Using HALOS
+
+        Returns
+        -------
+        None. Populates self.parallel_flux_maps
+
+        """
+        self.sp_flux = sp_module.SP_Flux(self.filenames, self.field)
+        print(len(self.field.x))
+        section_id = []
+        for s in range(self.field.num_sections):
+            section_id.append(s)
+        self.parallel_flux_maps = {}
+        for s in section_id:
+            sect = self.flux_by_section(s)
+            self.parallel_flux_maps.update(sect)
+        for h in self.parallel_flux_maps.keys():
+            self.parallel_flux_maps[h] = numpy.matrix(self.parallel_flux_maps[h]).round(3)  # round to nearest Watt
+        print("HALOS Native Flux Calculation - Done!")
 
     def get_sp_flux_parallel(self):
         """
@@ -379,13 +415,13 @@ class FluxModel(object):
         """  
         center_idx = len(self.receiver.aimpoints) // 2
         maps = {}
-        center_map = self.GenerateSingleFluxMap(helio_idx,center_idx,solar_vector,dni,approx).flatten()
+        center_map = self.GenerateSingleFluxMap(helio_idx,center_idx,solar_vector,approx).flatten()
         mirror_power = dni * self.field.mirror_area
         factor = self.GetNormalizationFactor(mirror_power,center_map)
         maps[center_idx] = factor * center_map
         for aimpoint_idx in range(len(self.receiver.aimpoints)):
             if aimpoint_idx != center_idx:
-                maps[aimpoint_idx] = factor * self.GenerateSingleFluxMap(helio_idx,aimpoint_idx,solar_vector,dni,approx).flatten()
+                maps[aimpoint_idx] = factor * self.GenerateSingleFluxMap(helio_idx,aimpoint_idx,solar_vector,approx).flatten()
         return maps
 
 
