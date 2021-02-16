@@ -21,7 +21,7 @@ class Field(object):
             self.z = []
             self.coords = numpy.array([self.x,self.y,self.z]).transpose()
             self.num_heliostats = 0
-            self.mirror_area = params["mirror_area"]
+            self.mirror_area = params.get("mirror_area")
             self.eff = []
             self.rej_x = []
             self.rej_y = []
@@ -39,7 +39,7 @@ class Field(object):
         else: 
             filename = filenames["field_filename"]
             self.GetFieldFromFile(filename,params)
-            self.SetMirrorArea(params["mirror_area"])
+            self.SetMirrorArea(params.get("mirror_area"))
         
     def GetX(self):
         return self.x
@@ -90,13 +90,15 @@ class Field(object):
         self.coords = numpy.array([self.x,self.y,self.z]).transpose()
         self.num_heliostats = len(self.x)
         self.eff = df["efficiency"].values
-        try: 
+        try:
+            self.getPolarAngles()
             if params["num_sections"] > 1:
-                self.getPolarAngles()
                 if params["section_method"] == "angle":
                     self.getSectionsByPolarAngle(params["num_sections"])
                 elif params["section_method"] == "distance":
                     self.getSectionsByDistance(params["num_sections"])
+            else:
+                self.getSectionsByPolarAngle(params["num_sections"])
         except KeyError:
             print("Warning: no sections mentioned in field parameters.")
             
@@ -131,13 +133,15 @@ class Field(object):
             self.eff = numpy.ones_like(self.x)  
             # TODO load the annual efficiency from SolarPILOT when using a
             # solar field from file and SolarPILOT for flux calculation
-        try: 
+        try:
+            self.getPolarAngles()
             if params["num_sections"] > 1:
-                self.getPolarAngles()
                 if params["section_method"] == "angle":
                     self.getSectionsByPolarAngle(params["num_sections"])
                 elif params["section_method"] == "distance":
                     self.getSectionsByDistance(params["num_sections"])
+            else:
+                self.getSectionsByPolarAngle(1)
         except KeyError:
             print("Warning: no sections mentioned in field parameters.")
                     
@@ -324,9 +328,9 @@ class Field(object):
         max_power = 1.0 #don't count any rejected heliostats whose annual power has been set to zero
         replace_idx = -1
         for ridx in range(len(self.rej_x)):
-            if self.rej_annual_power[ridx] > max_power and self.utilization_by_section[self.rej_section_ids[ridx]] > 0.9999:
+            if self.rej_annual_power[ridx] > max_power and self.utilization_by_section[self.rej_section_ids[ridx]] > 0.995:
                 replace_idx = ridx
-            max_power = self.rej_annual_power[ridx]
+                max_power = self.rej_annual_power[ridx]
         return replace_idx
 
 
@@ -368,7 +372,26 @@ class Field(object):
         self.section_flux = [
             sum([self.eff[idx] for idx in self.helios_by_section[s]])
             / sum(self.eff) for s in range(self.num_sections)]
-        
+
+
+    def updateSPfield(self, sp_field_filename, case_filename, case_name, new_field_filename, num_sections):
+        import inputs
+        filenames = {"field_filename": sp_field_filename}
+        params = {}
+        params["num_sections"] = num_sections
+        params["section_method"] = "angle"
+        params["mirror_area"] = 100
+        params["hold_sp_rejects"] = True
+        field = Field(filenames, params, use_sp_field=False)
+        field.getSectionsForRejectedHeliostats()
+        import annual_layout_optimize
+        periods = annual_layout_optimize.getHourIDs(case_filename)
+        periods = [5170, 5171]
+        field.getUtilizationStats(case_name, periods)
+        field.updateFieldForUtilization(0.995)
+        field.outputFieldToFile(new_field_filename)
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
@@ -376,40 +399,52 @@ if __name__ == "__main__":
     # fname = "./../solarpilot_cases/radial-daggett-50.csv"
     import inputs
 
-    case_filename = "./../case_inputs/flat_50_ca_case.csv"
+    # case_filename = "./../case_inputs/flat_50_ca_case.csv"
     filenames = {"field_filename": "radial-250-daggett-layout.csv"}
+    case_filename = "./../case_inputs/radial_250_ca_case.csv"
+    case_name = "radial-250-daggett"
     params = {}
     params["num_sections"] = 16
     params["section_method"] = "angle"
     params["mirror_area"] = 100
     params["hold_sp_rejects"] = True
     field = Field(filenames, params, use_sp_field = False)
+    old_field_filename = case_name + "_old_field.csv"
+    field.outputFieldToFile(old_field_filename)
     field.getSectionsForRejectedHeliostats()
     # print(field.rej_section_ids)
     import annual_layout_optimize
     case_filename = "./../case_inputs/radial_250_ca_case.csv"
     case_name = "radial-250-daggett"
-    new_field_filename = case_name + "_rev_field.csv"
+    new_field_filename = case_name + "_rev_fielddfsaf.csv"
     periods = annual_layout_optimize.getHourIDs(case_filename)
     field.getUtilizationStats(case_name, periods)
-    field.updateFieldForUtilization(0.995)
-    field.outputFieldToFile(new_field_filename)
-    print(field.eff)
+    #field.updateFieldForUtilization(0.995)
+    # field.outputFieldToFile(new_field_filename)
+    # print(field.eff)
     # print(field.utilization_by_section)
     # print(field.min_utilization_by_section)
     # print(field.min_utilization_by_section.argsort())
-    if False:
-        x = []
-        y = []
-        col = []
+    if True:
+        replaced_idxs = [2715, 2591,2592,2593,2594,2595,2511,2514,2512,2513,2407,2408,2409,2410,2412,2413,2414,2415,2416,
+            2411,2294,2295,2296,2297,2405,2404,2406,2283,2281,2282,2284,2285,2286,2288,2289,2290,2291,2287,2156,2153,2154,
+            2155,2157,2159,2160,2161,2162,2163,2713,2714,2588,2589,2590,2504,2500,2501,2502,2505,2506,2507]
+        x = [0.,0.]
+        y = [0.,0.]
+        col = [0.,1.0]
         for idx in range(len(field.helios_by_section)):
             #r = np.random.random_sample()
             for h in field.helios_by_section[idx]:
                 x.append(field.x.flatten()[h])
                 y.append(field.y.flatten()[h])
-                col.append(float(idx))
-        plt.scatter(x,y,s=6,c = col,cmap="jet")
-        plt.show()
+                if h in replaced_idxs:
+                    col.append(0.0)
+                else:
+                    col.append(1.0)
+        plt.scatter(x,y,s=6,c = col,cmap="Set1")
+        plt.ylim([-750.,1250.])
+        plt.xlim([-1000.,1000.])
+        plt.savefig("old.png")
         plt.cla()
         plt.clf()
 
