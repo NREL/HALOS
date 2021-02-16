@@ -193,11 +193,11 @@ class SP_Field(SolarPilot):
             power_sum.append(sum_h)  
         print("results aggregated")
         #send to new dataframe
-        annual_results = pandas.DataFrame(columns = ["id","x_location","y_location","z_location","annual_power"])
+        annual_results = pandas.DataFrame(columns = ["id","X-pos","Y-pos","Z-pos","annual_power"])
         annual_results["id"] = field["id"]
-        annual_results["x_location"] = field["x_location"]
-        annual_results["y_location"] = field["y_location"]
-        annual_results["z_location"] = field["z_location"]
+        annual_results["X-pos"] = field["x_location"]
+        annual_results["Y-pos"] = field["y_location"]
+        annual_results["Z-pos"] = field["z_location"]
         annual_results["annual_power"] = power_sum
         annual_results.set_index("id")
         #get used field, add indicator to what's in the actual field
