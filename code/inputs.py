@@ -11,6 +11,7 @@ import geometry
 import mirror_model
 import field
 import csv
+import numpy
 
 def readCaseFile(master_filename):
     """
@@ -164,3 +165,37 @@ def getFullFluxModelFromFiles(case_filename, hour_id = None):
     fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, solar_field,filenames,hour_id, use_sp_flux = settings["use_sp_flux"])
     fm.addSettings(settings)
     return fm
+
+def readFluxMapFromCSV(filename,num_rows,num_cols):
+    """
+        reads a csv file with a flux map as a matrix.
+
+        Parameters:
+            filename -- path to file
+            num_rows -- number of rows in flux map matrix
+            num_cols -- number of rows in flux map matrix
+        Returns:
+            arr -- 2-dimensional array with flux map
+        """
+    arr = numpy.zeros([num_rows,num_cols],dtype=float)
+    reader = csv.reader(open(filename, 'r'))
+    row_idx = 0
+    for line in reader:
+        print(len(arr))
+        print(len(line))
+        arr[row_idx] = [float(line[idx]) for idx in range(num_cols)]
+        row_idx += 1
+        if row_idx == num_rows:
+            break
+    return arr
+
+
+
+if __name__ == "__main__":
+    dirpath = "./../case_inputs/NREL-Tietronix aimpoint case study/flux_maps_21June_noon/"
+    helio_idx = 1
+    filename = dirpath + "heliostat"+str(helio_idx)+".csv"
+    num_rows = 60
+    num_cols = 56
+    arr = readFluxMapFromCSV(filename,num_rows,num_cols)
+    print(arr)
