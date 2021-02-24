@@ -73,7 +73,7 @@ def ReadWeatherFile(weather_file, get_angles=False):
 class FluxModel(object):
     def __init__(self,sun_shape, mirror_shape, receiver, flux_method, 
                  weather_file, field, filenames = None, hour_id = None,
-                 use_sp_flux = False, dni = None):
+                 use_sp_flux = False, dni = None, read_flux_from_file = False):
         self.sun_shape = sun_shape
         self.mirror_shape = mirror_shape
         self.receiver = receiver
@@ -83,6 +83,7 @@ class FluxModel(object):
         self.filenames = filenames
         self.hour_id = hour_id
         self.use_sp_flux = use_sp_flux
+        self.read_flux_from_file = read_flux_from_file
         if self.receiver.dni != None:
             self.dni = self.receiver.dni
         elif self.hour_id != None: 
@@ -94,6 +95,8 @@ class FluxModel(object):
             raise Exception(msg)
         if use_sp_flux:
             self.get_sp_flux_parallel()
+        elif self.read_flux_from_file:
+            self.get_flux_maps_from_files()
         else:
             self.get_halos_native_flux()
         if self.receiver.params["receiver_type"] == "External cylindrical":
@@ -193,6 +196,14 @@ class FluxModel(object):
             for h in self.field.helios_by_section[section_id]:
                 flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni)
                 flux[h] = numpy.array(flux_map)
+        elif self.read_flux_from_file:
+            import inputs
+            num_cols = self.receiver.params["pts_per_len_dim"]
+            num_rows = self.receiver.params["pts_per_ht_dim"]
+            for h in self.field.helios_by_section[section_id]:
+                fname = self.filenames["heliostat_file_dir"]+"heliostat"+str(h+1)+".csv"
+                flux_map = inputs.readFluxMapFromCSV(fname, num_rows, num_cols)
+                flux[h] = inputs.condenseFluxMap(flux_map,factor=2)  #TODO generalize the condensing if this is expected
         else:
             for h in self.field.helios_by_section[section_id]:
                 if self.receiver.params["receiver_type"] == "Flat plate":
@@ -225,6 +236,28 @@ class FluxModel(object):
         for h in self.parallel_flux_maps.keys():
             self.parallel_flux_maps[h] = numpy.matrix(self.parallel_flux_maps[h]).round(3)  # round to nearest Watt
         print("HALOS Native Flux Calculation - Done!")
+
+    def get_flux_maps_from_files(self):
+        """
+        Get flux maps by reading CSV files directly.
+
+        Returns
+        -------
+        None. Populates self.parallel_flux_maps
+        """
+        section_id = []
+        for s in range(self.field.num_sections):
+            section_id.append(s)
+        import multiprocessing
+        p = multiprocessing.Pool(multiprocessing.cpu_count())
+        results = p.map(self.flux_by_section, section_id)
+        self.parallel_flux_maps = {}
+        for sect in results:
+            self.parallel_flux_maps.update(sect)
+        for h in self.parallel_flux_maps.keys():
+            self.parallel_flux_maps[h] = numpy.matrix(self.parallel_flux_maps[h]).round(3)  # round to nearest Watt
+        print("Parallel Flux Calculation - Done!")
+        del (p)
 
     def get_sp_flux_parallel(self):
         """

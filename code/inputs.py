@@ -65,25 +65,19 @@ def readSettingsFile(settings_filename):
     for line in reader:    
         if len(line)>1:
             if line[0] in ["num_sections","use_sp_flux","hour_idx",
-                    "use_sp_field","heliostat_group_size"]:
+                    "use_sp_field","heliostat_group_size","read_flux_from_file"]:
                 d[line[0]] = int(line[1])
             elif line[0] in ["mirror_area"]:
                 d[line[0]] = float(line[1])
             else:
                 d[line[0]] = line[1]
-    if d["use_sp_flux"] == 1:
-        d["use_sp_flux"] = True
-    else:
-        d["use_sp_flux"] = False
-    if d["use_sp_field"] == 1:
-        d["use_sp_field"] = True
-    else:
-        d["use_sp_field"] = False
-    if "heliostat_group_size" not in d.keys():
+    for key in ["use_sp_flux","use_sp_field","read_flux_from_file"]:
+        d[key] =  bool(d.get(key))
+    if d.get("heliostat_group_size") is None:
         d["heliostat_group_size"] = 1
     return d
 
-def getReceiverFromFile(filename,solar_field):
+def getReceiverFromFile(filename,solar_field,flux_limit_filename=None):
     """
     Creates Receiver provided input file and a solar_field 
 
@@ -114,7 +108,10 @@ def getReceiverFromFile(filename,solar_field):
     elif d["receiver_type"] == "External cylindrical":
         r = geometry.CylindricalPlateReceiver(d["tow_height"],d,solar_field)
     #r.generateFixedFluxLimits(0.0,d["power_rating"] / num_points)
-    r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
+    if flux_limit_filename != None:
+        r.flux_upper_limits = readFluxMapFromCSV(flux_limit_filename,d["pts_per_ht_dim"],d["pts_per_len_dim"])
+    else:
+        r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
     return r
     
 
@@ -157,12 +154,14 @@ def getFullFluxModelFromFiles(case_filename, hour_id = None):
     settings = readSettingsFile(filenames["settings"])
     sun = sun_shape.SinglePointSun(0)  #for these case studies, rm sun shape
     solar_field = field.Field(filenames,params=settings, use_sp_field = settings["use_sp_field"])
-    receiver = getReceiverFromFile(filenames["receiver_filename"],solar_field)
+    receiver = getReceiverFromFile(filenames["receiver_filename"],solar_field, filenames.get("flux_limit_filename"))
     mirror = getMirrorModelFromFile(filenames["mirror_filename"],solar_field,settings)
     method = getMethodFromFiles(settings,mirror)
     weather_file = filenames["weather_filename"]
     # change use_sp_flux to True for using SolarPilot API Flux
-    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, solar_field,filenames,hour_id, use_sp_flux = settings["use_sp_flux"])
+    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, solar_field,filenames,hour_id,
+                              use_sp_flux = settings["use_sp_flux"],
+                              read_flux_from_file= settings["read_flux_from_file"])
     fm.addSettings(settings)
     return fm
 
@@ -181,15 +180,23 @@ def readFluxMapFromCSV(filename,num_rows,num_cols):
     reader = csv.reader(open(filename, 'r'))
     row_idx = 0
     for line in reader:
-        print(len(arr))
-        print(len(line))
         arr[row_idx] = [float(line[idx]) for idx in range(num_cols)]
         row_idx += 1
         if row_idx == num_rows:
             break
     return arr
 
-
+def condenseFluxMap(arr, factor=2):
+    """
+    condenses an array into a smaller one by taking the average of condensed cells.
+    """
+    num_rows = int(len(arr)/factor)
+    num_cols = int(len(arr[0])/factor)
+    new_arr = numpy.zeros([num_rows,num_cols],dtype=float)
+    for r in range(num_rows):
+        for c in range(num_cols):
+            new_arr[r,c] = numpy.average(arr[r*factor:(r+1)*factor,c*factor:(c+1)*factor])
+    return new_arr
 
 if __name__ == "__main__":
     dirpath = "./../case_inputs/NREL-Tietronix aimpoint case study/flux_maps_21June_noon/"

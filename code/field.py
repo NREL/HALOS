@@ -68,7 +68,7 @@ class Field(object):
         
     def GetFieldFromSP(self,filenames, params):
         """
-        Use SolarPolit to get field
+        Use SolarPILOT to get field
 
         Parameters
         ----------
@@ -104,7 +104,7 @@ class Field(object):
             
     def GetFieldFromFile(self,filename, params):
         """
-        Reads field CSV file
+        Reads field CSV file for coordinates
 
         Parameters
         ----------
