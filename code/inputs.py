@@ -97,6 +97,8 @@ def getReceiverFromFile(filename,solar_field,flux_limit_filename=None):
     if "pts_per_dim" in d.keys():
         d["pts_per_dim"] = int(d["pts_per_dim"])
         num_points = int(d["pts_per_dim"]) * int(d["pts_per_dim"])
+        d["pts_per_len_dim"] = d["pts_per_dim"]
+        d["pts_per_ht_dim"] = d["pts_per_dim"]
     else:
         d["pts_per_len_dim"] = int(d["pts_per_len_dim"])
         d["pts_per_ht_dim"] = int(d["pts_per_ht_dim"])

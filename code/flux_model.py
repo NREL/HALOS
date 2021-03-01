@@ -202,7 +202,7 @@ class FluxModel(object):
             num_rows = self.receiver.params["pts_per_ht_dim"]
             for h in self.field.helios_by_section[section_id]:
                 fname = self.filenames["heliostat_file_dir"]+"heliostat"+str(h+1)+".csv"
-                flux_map = inputs.readFluxMapFromCSV(fname, num_rows, num_cols)
+                flux_map = inputs.readFluxMapFromCSV(fname, num_rows*2, num_cols*2)
                 flux[h] = inputs.condenseFluxMap(flux_map,factor=2)  #TODO generalize the condensing if this is expected
         else:
             for h in self.field.helios_by_section[section_id]:
@@ -425,7 +425,7 @@ class FluxModel(object):
         col_sum_each_map = self.SectionFluxMap()
         col_sums = []  # Stores sum as: 1st list is sum of 1st column of each section
 
-        for ncol in range(self.receiver.params["pts_per_dim"]):
+        for ncol in range(self.receiver.params["pts_per_len_dim"]):
             col_sum_each_column = []   #Stores sum of one specific column from each section
             for s in range(self.field.num_sections):
                 col_sum_each_column.append((col_sum_each_map[s])[ncol])
@@ -434,7 +434,7 @@ class FluxModel(object):
         self.fraction_maps = []
         for s in range(self.field.num_sections):
             fraction_map = pandas.DataFrame(numpy.zeros_like(self.receiver.x))
-            for ncol in range(self.receiver.params["pts_per_dim"]):
+            for ncol in range(self.receiver.params["pts_per_len_dim"]):
                 fraction_map[ncol] = fraction_map[ncol] + (col_sums[ncol])[s]/sum(col_sums[ncol])
             self.fraction_maps.append(numpy.array(fraction_map))
 

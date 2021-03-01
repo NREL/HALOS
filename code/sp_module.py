@@ -96,8 +96,8 @@ class SolarPilot:
             cp.data_set_number(self.r, "fluxsim.0.flux_dni", dni)
         elif self.receiver_data.get('flux_dni') is not None: 
             cp.data_set_number(self.r, "fluxsim.0.flux_dni", float(self.receiver_data["flux_dni"]))
-        cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))   
-        cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))  
+        cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_len_dim"]))
+        cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_ht_dim"]))
         if hour_id is not None:
             cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
             cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])

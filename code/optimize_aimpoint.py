@@ -95,7 +95,8 @@ class AimpointOptimizer(object):
 
     def generateMeasurementSubset(self):
         measurement_points = []
-        pts_per_dim = int(self.flux_model.receiver.params["pts_per_dim"])
+        m_rows = int(self.flux_model.receiver.params["pts_per_ht_dim"])
+        m_cols = int(self.flux_model.receiver.params["pts_per_len_dim"])
         if self.flux_model.receiver.params["receiver_type"] == "Flat plate":
             aim_cols = int(self.flux_model.receiver.params["aim_cols"])
 
@@ -103,13 +104,13 @@ class AimpointOptimizer(object):
             aim_cols = 1
   
         aim_rows = int(self.flux_model.receiver.params["aim_rows"])
-        row_spacing = pts_per_dim // aim_cols
-        col_spacing = pts_per_dim // aim_rows
+        row_spacing = m_cols // aim_cols
+        col_spacing = m_rows // aim_rows
         first_row = row_spacing // 2
         first_col = col_spacing // 2
         for r in range(aim_rows):
             for c in range(aim_cols):
-                pt = (first_row + (r*row_spacing)) * pts_per_dim + (first_col + (c*col_spacing)) + 1
+                pt = (first_row + (r*row_spacing)) * m_rows + (first_col + (c*col_spacing)) + 1
                 measurement_points.append(pt)
         self.model.check_measurement_points = pe.Set(initialize = measurement_points)
 
