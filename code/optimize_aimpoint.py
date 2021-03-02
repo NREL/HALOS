@@ -18,7 +18,7 @@ def objectiveRule(model):
         return sum(  #m 
                     sum( #h
                         sum(#a
-                            model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
+                            model.obj_by_point[m] * model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
                             for a in model.aimpoints
                         ) for h in model.heliostats
                     ) for m in model.measurement_points
@@ -172,6 +172,7 @@ class AimpointOptimizer(object):
         flux_lbs = {}
         flux_ubs = {}
         surface_area = {}
+        obj_by_point = {}
         if self.params["num_sections"] == 1:
             fraction = 1.0
         else: 
@@ -187,12 +188,13 @@ class AimpointOptimizer(object):
                 flux_lbs[i+1] = self.flux_model.receiver.flux_lower_limits[i] * fraction
                 flux_ubs[i+1] = self.flux_model.receiver.flux_upper_limits[i] * fraction      
             surface_area[i+1] = self.flux_model.receiver.surface_area[i]
+            obj_by_point[i+1] = self.flux_model.receiver.obj_by_point[i]
         
-        #if specifying flux maps from a file, do so.
+        #if specifying flux maps from a file, do so. #TODO remove this as the .csv's method will replace
         try: 
             if self.params["flux_from_file"]:
                 flux = self.getFluxFromFile()
-                return flux, flux_lbs, flux_ubs, surface_area
+                return flux, flux_lbs, flux_ubs, surface_area, obj_by_point
         except KeyError:
             pass
         flux = {} 
@@ -206,7 +208,7 @@ class AimpointOptimizer(object):
                 elif self.flux_model.receiver.params["receiver_type"] == "External cylindrical":
                     for a in self.model.aimpoints:
                         flux[h,m,a] = h_map[a-1][m-1]
-        return flux, flux_lbs, flux_ubs, surface_area
+        return flux, flux_lbs, flux_ubs, surface_area, obj_by_point
     
     
     def getFluxFromFile(self):
@@ -237,12 +239,13 @@ class AimpointOptimizer(object):
         None. Assigns inputs to the pyomo model
 
         """
-        flux, flux_lbs, flux_ubs, surface_area = self.getFluxParameters()
+        flux, flux_lbs, flux_ubs, surface_area, obj_by_point = self.getFluxParameters()
         self.model.flux = pe.Param(self.model.heliostats, self.model.measurement_points, self.model.aimpoints, initialize = flux)
         self.model.flux_lbs = pe.Param(self.model.measurement_points, initialize = flux_lbs)
         self.model.flux_ubs = pe.Param(self.model.measurement_points, initialize = flux_ubs) 
         self.model.flux_diff = pe.Param(self.model.measurement_points, self.model.measurement_points, mutable=True, initialize = 1e9)
         self.model.surface_area = pe.Param(self.model.measurement_points, initialize = surface_area)
+        self.model.obj_by_point = pe.Param(self.model.measurement_points, initialize = obj_by_point)
         if self.params["ordered_defocus"]:
             self.getHeliostatOrdering(self.params["order_method"])
         self.model.flux_constraint_limit = self.params["flux_constraint_limit"]

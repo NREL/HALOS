@@ -93,7 +93,7 @@ def getReceiverFromFile(filenames,solar_field):
     r : Receiver object
 
     """
-    d = readParamFile(filename)
+    d = readParamFile(filenames["receiver_filename"])
     if "pts_per_dim" in d.keys():
         d["pts_per_dim"] = int(d["pts_per_dim"])
         num_points = int(d["pts_per_dim"]) * int(d["pts_per_dim"])
@@ -110,13 +110,13 @@ def getReceiverFromFile(filenames,solar_field):
     elif d["receiver_type"] == "External cylindrical":
         r = geometry.CylindricalPlateReceiver(d["tow_height"],d,solar_field)
     #r.generateFixedFluxLimits(0.0,d["power_rating"] / num_points)
-    if filenames.get("flux_limit_filename") != None:
-        r.flux_upper_limits = readFluxMapFromCSV(d["flux_limit_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
+    if filenames.get("flux_limit_filename") is not None:
+        r.flux_upper_limits = readFluxMapFromCSV(filenames["flux_limit_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
         r.flux_lower_limits = numpy.ones_like(r.flux_upper_limits) * d["flux_lb"]
     else:
         r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
-    if filenames.get("rec_obj_filename") != None:
-        r.obj_by_point = readFluxMapFromCSV(d["rec_obj_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
+    if filenames.get("rec_obj_filename") is not None:
+        r.obj_by_point = readFluxMapFromCSV(filenames["rec_obj_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
     else:
         r.obj_by_point = numpy.ones_like(r.flux_upper_limits)
     return r
@@ -223,10 +223,9 @@ def expandFluxMap(arr, factor=2):
     return new_arr
 
 if __name__ == "__main__":
-    dirpath = "./../case_inputs/NREL-Tietronix aimpoint case study/flux_maps_21June_noon/"
-    helio_idx = 1
-    filename = dirpath + "heliostat"+str(helio_idx)+".csv"
-    num_rows = 60
-    num_cols = 56
-    arr = readFluxMapFromCSV(filename,num_rows,num_cols)
+    filename = "./../case_inputs/filenames_study/active_surface.csv"
+    outfilename = "./../case_inputs/filenames_study/active_surface2.csv"
+    num_rows = 30
+    num_cols = 28
+    arr = readFluxMapFromCSV(filename, num_rows, num_cols)
     print(arr)
