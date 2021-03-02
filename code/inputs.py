@@ -115,8 +115,8 @@ def getReceiverFromFile(filenames,solar_field):
         r.flux_lower_limits = numpy.ones_like(r.flux_upper_limits) * d["flux_lb"]
     else:
         r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
-    if filenames.get("active_surface_filename") != None:
-        r.obj_by_point = readFluxMapFromCSV(d["active_surface_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
+    if filenames.get("rec_obj_filename") != None:
+        r.obj_by_point = readFluxMapFromCSV(d["rec_obj_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
     else:
         r.obj_by_point = numpy.ones_like(r.flux_upper_limits)
     return r
