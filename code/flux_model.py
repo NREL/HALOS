@@ -202,8 +202,7 @@ class FluxModel(object):
             num_rows = self.receiver.params["pts_per_ht_dim"]
             for h in self.field.helios_by_section[section_id]:
                 fname = self.filenames["heliostat_file_dir"]+"heliostat"+str(h+1)+".csv"
-                flux_map = inputs.readFluxMapFromCSV(fname, num_rows*2, num_cols*2)
-                flux[h] = inputs.condenseFluxMap(flux_map,factor=2)  #TODO generalize the condensing if this is expected
+                flux[h] = inputs.readFluxMapFromCSV(fname, num_rows, num_cols)
         else:
             for h in self.field.helios_by_section[section_id]:
                 if self.receiver.params["receiver_type"] == "Flat plate":
