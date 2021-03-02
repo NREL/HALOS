@@ -354,7 +354,7 @@ class FluxModel(object):
             shift_size = round(len(map_center)/aim_cols)
         map_center = numpy.array(map_center)   
         center_map = map_center.flatten()
-        if not self.use_sp_flux:
+        if not (self.use_sp_flux or self.read_flux_from_file):
             mirror_power = self.dni * self.field.mirror_area
             factor = self.GetNormalizationFactor(mirror_power,center_map)
         else:
