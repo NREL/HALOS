@@ -123,6 +123,11 @@ The main input CSV file is used to assign paths to CSV files and the parameters 
 | mirror_filename | string | Path to mirror settings CSV |
 | settings | string | Path to case settings CSV |
 | weather_filename | string | Path to Weather File such as (TMY3) |
+| heliostat_file_dir | string | (OPTIONAL) Path to directory containing heliostat-specific flux images in flat-file format |
+| flux_limit_filename | string | (OPTIONAL) Path to receiver flux limits table CSV |
+| rec_obj_filename | string | (OPTIONAL) Path to objective value table CSV |
+
+Note that the tables in "flux_limit_filename" and "rec_obj_filename" do not include any headers, and must match the dimensions of the receiver given by "pts_per_ht_dim" and "pts_per_len_dim" for rows and columns, respectively.  The table in flux_limit_filename should provide inputs in kW, while the table in "rec_obj_filename" should consist of unitless multipliers, generally 1 for measurement points on the receiver surface and 0 for measurement points on the heat shields, if used.  If "rec_obj_filename" is not provided, a default of 1 wil be applied to every measurement point.  
 
 ## 2. Case Settings
 The case_setting file contains the following parameters. 
@@ -132,7 +137,7 @@ The case_setting file contains the following parameters.
 | mirror_model | String | Select mirror model  | SinglePointGaussian |
 | method | String | Flux Calculation method for HALOS | SimpleNormalFluxCalc |
 | num_sections | Integer | Number of field subsections | 8 |
-| section_method | String | Method for field Subsectioning (angle/distance) | angle |
+| section_method | String | Method for field division into subsections (angle/distance) | angle |
 | use_sp_flux | Integer | Boolean (1/0): Use SolarPILOT to calculate Flux | 1 |
 | use_sp_field | Integer | Boolean (1/0): Use SolarPILOT to generate field | 1 |
 | hour_idx | Integer | Simulation hour index from weather file | 4311 |
@@ -147,7 +152,8 @@ The receiver input csv has the following parameters
 | length | Integer | Receiver horizontal Length | 21 |
 | height | Integer | Receiver height | 17 |
 | diameter | Integer | Receiver diameter | 10.38 |
-| pts-per-dimension | Integer | Number of measurement points per dimension - Receiver resolution | 20 |
+| pts_per_ht_dim | Integer | Number of rows in receiver measurement point grid | 20 |
+| pts_per_len_dim | Integer | Number of columns in receiver measurement point grid | 20 |
 | zenith_deg | Integer | Receiver zenith angle - degrees | 90 |
 | azimuth_deg | Integer | Receiver azimuth angle - degrees | 180 |
 | rec_cent_offset_x | Integer | Receiver offset from center - x_axis | 0 |
@@ -166,6 +172,7 @@ The receiver input csv has the following parameters
 | flux_lb | Integer | Flux lower bound (kW/m^2) | 0 |
 | n_circulation | Integer | Number of flow circulations (Assumes flow enters from top ) | 5 |
 
+Note that "flux_ub," "flux_lb," and "n_circulation" are overridden if a filepath is provided to a user-specific flux limit file via "flux_limit_filename" in the Case Settings file.
 
 ## External libraries
 
