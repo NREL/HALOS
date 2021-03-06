@@ -15,7 +15,9 @@ class Field(object):
     z-coordinates, but may include mirror model information as well. 
     """
     def __init__(self,filenames=None, params={"mirror_area":100}, use_sp_field = False):
-        if filenames == None:
+        if use_sp_field:
+            self.GetFieldFromSP(filenames, params)
+        elif filenames == None:
             self.x = []
             self.y = []
             self.z = []
@@ -34,8 +36,6 @@ class Field(object):
             self.rej_distance = []
             self.rej_polar_angles = []
             self.rej_annual_power = []
-        elif use_sp_field:
-            self.GetFieldFromSP(filenames,params)
         else: 
             filename = filenames["field_filename"]
             self.GetFieldFromFile(filename,params)
