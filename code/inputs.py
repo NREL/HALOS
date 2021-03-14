@@ -109,10 +109,13 @@ def getReceiverFromFile(filenames,solar_field):
         print("Flat Plate Receiver")
     elif d["receiver_type"] == "External cylindrical":
         r = geometry.CylindricalPlateReceiver(d["tow_height"],d,solar_field)
-    #r.generateFixedFluxLimits(0.0,d["power_rating"] / num_points)
+    #r.generateFixedFluxLimits(0.0,d["power_rating"] / num_
     if filenames.get("flux_limit_filename") is not None:
+        import pandas
         r.flux_upper_limits = readFluxMapFromCSV(filenames["flux_limit_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
         r.flux_lower_limits = numpy.ones_like(r.flux_upper_limits) * d["flux_lb"]
+        df = pandas.DataFrame(r.flux_upper_limits)
+        df.to_csv("flux_limits.csv", index=False)
     else:
         r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
     if filenames.get("rec_obj_filename") is not None:
