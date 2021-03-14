@@ -40,7 +40,7 @@ def ReadWeatherFile(weather_file, get_angles=False):
         d[header_keys[i]] = fline[i]
     weather_data["lat"] = float(d["Latitude"])
     weather_data["lon"] = float(d["Longitude"])
-    weather_data["time_zone"] = int(d["Time Zone"])
+    weather_data["time_zone"] = float(d["Time Zone"])
     # Third line is column headers for time-series data, just track dni
     keys = next(reader)
     year_idx = keys.index("Year")
