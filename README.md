@@ -14,7 +14,7 @@ SolarPILOT is a design and optimization tool for concentrating solar power (CSP)
 
 ## Solver Binary Setup
 HALOS is implmemented in Python 3.7 and uses Pyomo, an algebraic modeling language implemented in Python for its optimization model.  While a large collection of solvers are accessible to Pyomo, the default solver used in HALOS is Cbc.  The following steps will allow Cbc to be accessible within HALOS on Windows systems:
-* Download the Cbc binary at its [Bintray location](https://bintray.com/coin-or/download/Cbc/2.9).
+* Download the Cbc binary from its [location at COIN-OR](https://www.coin-or.org/download/binary/Cbc/).
 * Add the folder location of the binary to the PATH environment variable
 After adding this folder, placing binaries of other solvers that work with Pyomo in the same folder should allow Pyomo models to access them.  HALOS includes some settings for Cbc, GLPK, and CPLEX in the source code.  
 
