@@ -257,7 +257,7 @@ def plot_optimal_aimpoint_allocation(outputs,fname):
     """
     x = outputs.flux_model.field.x.flatten()
     y = outputs.flux_model.field.y.flatten()
-    colors = plt.scatter(x,y,s=6,c=outputs.aimpoint_select_map,cmap='hsv')
+    colors = plt.scatter(x,y,s=6,c=outputs.aimpoint_select_map,cmap='Set1')
     plt.savefig(fname, dpi= 2000)
     plt.cla()
     plt.clf()
@@ -274,7 +274,7 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     """
     x = outputs.flux_model.receiver.aim_x.flatten()
     y = outputs.flux_model.receiver.aim_z.flatten()
-    colors = plt.scatter(x,y,s=6,c=range(1,outputs.flux_model.receiver.num_aimpoints+1),cmap='hsv')
+    colors = plt.scatter(x,y,s=6,c=range(1,outputs.flux_model.receiver.num_aimpoints+1),cmap='Set1')
     plt.savefig(fname, dpi= 2000)
     plt.cla()
     plt.clf()
