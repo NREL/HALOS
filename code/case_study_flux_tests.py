@@ -213,7 +213,6 @@ if __name__ == "__main__":
     ## Solar Fields obtained from SolarPilot
     names = ["flat-daggett-50","flat-daggett-250","flat-morocco-50","flat-morocco-250"]
     filenames = [
-    filenames = [
             "./../sample_fields/flat-daggett-50.csv",
             "./../sample_fields/flat-daggett-250.csv",
             "./../sample_fields/flat-morocco-50.csv",
