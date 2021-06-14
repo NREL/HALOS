@@ -223,7 +223,6 @@ if __name__ == "__main__":
            "./../sample_fields/radial-morocco-50.csv",
            "./../sample_fields/radial-morocco-250.csv"
             ]
-            ]
     """ 
     OVER THE TIME (DNI>500):
     
