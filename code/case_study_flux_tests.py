@@ -53,7 +53,7 @@ def YealyTestCase(kwargs,num_case):
 
     """
     gen = WELL512.WELL512("rngstates.csv")
-    sf = field.Field(filename=kwargs["field_filename"])
+    sf = field.Field(filenames=kwargs["field_filename"])
     sun = sun_shape.SinglePointSun(0)
     #    params = {"length": 21, "height": 17, "pts_per_dim": 10}
     #north-facing receiver, no tilt
