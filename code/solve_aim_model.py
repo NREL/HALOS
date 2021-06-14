@@ -201,7 +201,7 @@ def runSPHourlyCase(main_case_name,case_name, case_filename, hour_id = None, app
     ofile = open("SolarPilot_" + main_case_name +"_summary.csv",rw)
     if sp_aimpoint_heur:
         if not append:
-            ofile.write("case_name,obj_value,num_defocus,max_flux,obj_pre_heur, obj_post_heur, post_num_defocused\n")
+            ofile.write("case_name,obj_value,num_defocus,max_flux,obj_pre_heur,obj_post_heur,post_num_defocused\n")
         ofile.write(case_name+","+str(outputs["obj_value"])+","+str(outputs["num_defocus"])
                     +","+str(outputs["max_flux"])+","+str(outputs["before_flux"])+","+
                     str(outputs["post_heur_obj"])+","+str(outputs["post_num_defocus"])+"\n")
