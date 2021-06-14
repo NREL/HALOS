@@ -213,14 +213,16 @@ if __name__ == "__main__":
     ## Solar Fields obtained from SolarPilot
     names = ["flat-daggett-50","flat-daggett-250","flat-morocco-50","flat-morocco-250"]
     filenames = [
-            "./../solarpilot_cases/flat-daggett-50.csv",
-            "./../solarpilot_cases/flat-daggett-250.csv",
-            "./../solarpilot_cases/flat-morocco-50.csv",
-            "./../solarpilot_cases/flat-morocco-250.csv" #,
-#            "./../solarpilot_cases/radial-daggett-50.csv",
-#            "./../solarpilot_cases/radial-daggett-250.csv",
-#            "./../solarpilot_cases/radial-morocco-50.csv",
-#            "./../solarpilot_cases/radial-morocco-250.csv"
+    filenames = [
+            "./../sample_fields/flat-daggett-50.csv",
+            "./../sample_fields/flat-daggett-250.csv",
+            "./../sample_fields/flat-morocco-50.csv",
+            "./../sample_fields/flat-morocco-250.csv",
+           "./../sample_fields/radial-daggett-50.csv",
+           "./../sample_fields/radial-daggett-250.csv",
+           "./../sample_fields/radial-morocco-50.csv",
+           "./../sample_fields/radial-morocco-250.csv"
+            ]
             ]
     """ 
     OVER THE TIME (DNI>500):
