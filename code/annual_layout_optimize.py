@@ -17,7 +17,7 @@ def getHourIDs(case_filename):
             hour_ids.append(i)
     return hour_ids
 
-def layout_from_SP(case_filename):
+def layout_from_SP(case_name, case_filename):
     import sp_module
     filenames = inputs.readCaseFile(case_filename)
     weather_data = flux_model.ReadWeatherFile(filenames["weather_filename"])
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     sp_case_name = "radial-250-daggett-sp"
     case_filename = "./../case_inputs/radial_250_ca_case.csv"
     
-    layout_from_SP(case_filename)
+    layout_from_SP(case_name, case_filename)
     runAnnualStudy(case_name, case_filename, sp_case_name)
     
         

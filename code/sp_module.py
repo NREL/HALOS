@@ -96,8 +96,12 @@ class SolarPilot:
             cp.data_set_number(self.r, "fluxsim.0.flux_dni", dni)
         elif self.receiver_data.get('flux_dni') is not None: 
             cp.data_set_number(self.r, "fluxsim.0.flux_dni", float(self.receiver_data["flux_dni"]))
-        cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))   
-        cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))  
+        try:
+            cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_len_dim"]))
+            cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_ht_dim"]))
+        except KeyError:
+            cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))
+            cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))
         if hour_id is not None:
             cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
             cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
@@ -193,11 +197,11 @@ class SP_Field(SolarPilot):
             power_sum.append(sum_h)  
         print("results aggregated")
         #send to new dataframe
-        annual_results = pandas.DataFrame(columns = ["id","x_location","y_location","z_location","annual_power"])
+        annual_results = pandas.DataFrame(columns = ["id","X-pos","Y-pos","Z-pos","annual_power"])
         annual_results["id"] = field["id"]
-        annual_results["x_location"] = field["x_location"]
-        annual_results["y_location"] = field["y_location"]
-        annual_results["z_location"] = field["z_location"]
+        annual_results["X-pos"] = field["x_location"]
+        annual_results["Y-pos"] = field["y_location"]
+        annual_results["Z-pos"] = field["z_location"]
         annual_results["annual_power"] = power_sum
         annual_results.set_index("id")
         #get used field, add indicator to what's in the actual field

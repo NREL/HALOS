@@ -106,10 +106,15 @@ def search_best_triple(bounds, s1, s2, s3, pts_per_dim, est_points, lb=0., ub=1.
     return best_sol, best_obj, objs, est_objs
 
 
-def plot_obj_heatmap(objs, fname):
+def plot_obj_heatmap(objs, fname, vmin=None, vmax=None):
+    import numpy
     plt.cla()
     plt.clf()
-    plt.imshow(objs, cmap='hot')
+    if vmin is None:
+        vmin = numpy.array(objs).min()
+    if vmax is None:
+        vmax = numpy.array(objs).max()
+    plt.imshow(objs, cmap='hot', vmin=vmin, vmax=vmax)
     plt.colorbar()
     plt.savefig(fname)
 
@@ -176,7 +181,7 @@ def plot_optimal_flux_heatmap(outputs,fname):
     None.
 
     """
-    flux = outputs.flux_map.reshape([outputs.flux_model.receiver.params["pts_per_dim"],outputs.flux_model.receiver.params["pts_per_dim"]])
+    flux = outputs.flux_map.reshape([outputs.flux_model.receiver.params["pts_per_ht_dim"],outputs.flux_model.receiver.params["pts_per_len_dim"]])
     plt.imshow(flux, cmap='hot')
     plt.colorbar()
     plt.savefig(fname)
@@ -198,13 +203,14 @@ def plot_flux_violation(outputs,fname):
     Plots heatmap
 
     """
-    pts = outputs.flux_model.receiver.params["pts_per_dim"]
+    pts_ht = outputs.flux_model.receiver.params["pts_per_ht_dim"]
+    pts_len = outputs.flux_model.receiver.params["pts_per_len_dim"]
     flux_ub = outputs.flux_model.receiver.flux_upper_limits
     flux = outputs.flux_map
     flux_violation = np.zeros_like(flux)
     for m in range(len(flux)):
         flux_violation[m] = max(0.0, flux[m]-flux_ub[m])
-    flux_violation = np.array(flux_violation).reshape(pts,pts)
+    flux_violation = np.array(flux_violation).reshape(pts_ht,pts_len)
     plt.imshow(flux_violation, cmap='hot')
     plt.colorbar()
     plt.savefig(fname)

@@ -81,7 +81,6 @@ class AimpointOptOutputs(object):
         calculates flux violation at each measurement point on the receiver
         after aimpoints have been optimized by section.
         """
-        pts = self.flux_model.receiver.params["pts_per_dim"]
         flux_ub = self.flux_model.receiver.flux_upper_limits
         flux = self.flux_map
         flux_violation = numpy.zeros_like(flux)
@@ -136,8 +135,9 @@ class AimpointOptOutputs(object):
             self.flux_violation -= self.contribution_by_heliostat[h,:]
             self.flux_violation = numpy.maximum(0,self.flux_violation)
             self.contribution_by_heliostat[h,:] *= 0.0
-        pts = self.flux_model.receiver.params["pts_per_dim"]
-        self.flux_violation.reshape(pts,pts)
+        m_rows = self.flux_model.receiver.params["pts_per_ht_dim"]
+        m_cols = self.flux_model.receiver.params["pts_per_len_dim"]
+        self.flux_violation.reshape(m_rows,m_cols)
         
         
     def printOutput(self, case_name, console = False):
