@@ -1,6 +1,7 @@
-﻿tow_height,640
-length,21
-height,100
+﻿length,21
+tow_height,195.07
+diameter,10.38
+height,30.48
 pts_per_dim,10.38
 zenith_deg,90
 azimuth_deg,180
@@ -15,8 +16,8 @@ power_rating,1.10E+08
 receiver_type,External cylindrical
 field_dni,950
 flux_dni,950
-mirror_len,37
-mirror_ht,34
+mirror_len,10
+mirror_ht,11.157
 mirror_area,115.7
 flux_ub,1000
 flux_lb,0
