@@ -62,6 +62,8 @@ class SolarPilot:
         center_aimpoint : 
             DESCRIPTION. The default is True.
             Aimpoint Method 
+        read_weather : 
+            DESCRIPTION. Default is false for running HALOS optimization. If true: read weather file, for running SP optimization.
 
         Returns
         -------
@@ -106,13 +108,11 @@ class SolarPilot:
             cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))
         if hour_id is not None:
             if read_weather == False:
-                print('read weather false, HALOS')
                 cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
                 cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
                 cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
                 cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
             else:
-                print('read weather true, SP, extra input')
                 weather_data = flux_model.ReadWeatherFile(weather_data)
                 cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
                 cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
