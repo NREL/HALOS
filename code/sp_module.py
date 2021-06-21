@@ -41,7 +41,7 @@ class SolarPilot:
                self.receiver_data[line[0]] = line[1]
                
     def assign_inputs(self, weather_data = None, hour_id = None, dni = None, 
-                      not_filter_helio = False, center_aimpoint = True):
+                      not_filter_helio = False, center_aimpoint = True, read_weather = False):
         """
         Creates solarpilot data pointer and assigns the inputs through data pointer 
 
@@ -63,6 +63,8 @@ class SolarPilot:
         center_aimpoint : 
             DESCRIPTION. The default is True.
             Aimpoint Method 
+        read_weather : 
+            DESCRIPTION. Default is false for running HALOS optimization. If true: read weather file, for running SP optimization.
 
         Returns
         -------
@@ -106,11 +108,17 @@ class SolarPilot:
             cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))
             cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))
         if hour_id is not None:
-            weather_data = flux_model.ReadWeatherFile(weather_data)
-            cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
-            cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
-            cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
-            cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
+            if read_weather == False:
+                cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
+                cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
+                cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
+                cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
+            else:
+                weather_data = flux_model.ReadWeatherFile(weather_data)
+                cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
+                cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
+                cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
+                cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
         #Weather File 
         # w_file = bytes(self.filenames["weather_filename"], encoding="utf-8")
         cp.data_set_string(self.r, "ambient.0.weather_file", self.filenames["weather_filename"]) 
@@ -310,7 +318,7 @@ class SP_Flux(SolarPilot):
         flux_dict : Dictionary 
 
         """
-        self.assign_inputs(weather_data, hour_id, dni)
+        self.assign_inputs(weather_data, hour_id, dni, read_weather=True)
         cp.data_set_string(self.r, "fluxsim.0.aim_method", aim_method)
         cp.data_set_string(self.r, "solarfield.0.des_sim_detail", "Do not filter heliostats")
         cp.assign_layout(self.r, self.helio_data)
@@ -358,7 +366,7 @@ class SP_Flux(SolarPilot):
             Total number Heliostats in the field
 
         """
-        self.assign_inputs(weather_data, hour_id, dni, not_filter_helio, center_aimpoint)
+        self.assign_inputs(weather_data, hour_id, dni, not_filter_helio, center_aimpoint, read_weather=True)
         cp.assign_layout(self.r, self.helio_data)
         cp.simulate(self.r, nthreads = 8)                                                             
         flux = cp.get_fluxmap(self.r)                                                
