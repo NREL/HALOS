@@ -15,8 +15,6 @@ import numpy
 import pandas
 import flux_model
 
-import flux_model
-
 cp = CoPylot()
 
 class SolarPilot:
