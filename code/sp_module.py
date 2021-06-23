@@ -106,17 +106,12 @@ class SolarPilot:
             cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))
             cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))
         if hour_id is not None:
-            if read_weather == False:
-                cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
-                cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
-                cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
-                cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
-            else:
+            if read_weather == True:
                 weather_data = flux_model.ReadWeatherFile(weather_data)
-                cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
-                cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
-                cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
-                cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
+            cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
+            cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
+            cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
+            cp.data_set_number(self.r, "fluxsim.0.flux_dni", weather_data['dni'][hour_id])
         #Weather File 
         # w_file = bytes(self.filenames["weather_filename"], encoding="utf-8")
         cp.data_set_string(self.r, "ambient.0.weather_file", self.filenames["weather_filename"]) 
