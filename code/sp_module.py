@@ -62,6 +62,8 @@ class SolarPilot:
         center_aimpoint : 
             DESCRIPTION. The default is True.
             Aimpoint Method 
+        read_weather : 
+            DESCRIPTION. Default is false for running HALOS optimization. If true: read weather file, for running SP optimization.
 
         Returns
         -------
