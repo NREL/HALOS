@@ -60,7 +60,7 @@ class AimpointOptOutputs(object):
             self.contribution_by_heliostat += d["contribution_by_heliostat"]
             self.utilization_by_section[d["section_id"]] = d["utilization"]
     
-    def plotOutputs(self, case_name="",fm = None):
+    def plotOutputs(self, case_name=""):
         """
         Plot Aimpoint Optimization Outputs
 
@@ -68,7 +68,8 @@ class AimpointOptOutputs(object):
         import plotting
         plotting.plot_optimal_flux_heatmap(self,case_name+"_fluxmap")
         plotting.plot_optimal_aimpoint_allocation(self,case_name+"_aimpoint_map")
-        plotting.plot_optimal_aimpoint_guide(self,case_name+"_aimpoint_select_map", fm)
+        plotting.plot_optimal_aimpoint_guide(self,case_name+"_aimpoint_select_map")
+        plotting.plot_measurement_and_aimpoints(self,case_name+"_measurement_and_aimpoints")
         plotting.plot_defocused(self,case_name+"_defocused_Heliostats")
         if self.flux_model.settings["num_sections"] > 1:
             plotting.plot_field_sections(self,case_name+"_field_sections")

@@ -261,7 +261,7 @@ def plot_optimal_aimpoint_allocation(outputs,fname):
     plt.cla()
     plt.clf()
     
-def plot_optimal_aimpoint_guide(outputs,fname,fm=None):
+def plot_optimal_aimpoint_guide(outputs,fname):
     """
     Plots Aimpoint Guide. 
 
@@ -279,11 +279,16 @@ def plot_optimal_aimpoint_guide(outputs,fname,fm=None):
     plt.cla()
     plt.clf()
 
-    if fm != None:
-        plt.scatter(x,y,color='r',marker='x')
-        fm.plotMeasurementPts()
-        plt.cla()
-        plt.clf()
+def plot_measurement_and_aimpoints(outputs,fname):
+    z_plot = outputs.flux_model.receiver.z[:,0]
+    x_plot = -5*np.ones(len(z_plot))
+    plt.scatter(x_plot,z_plot,color='k',s=8)
+    x = outputs.flux_model.receiver.aim_x.flatten()
+    y = outputs.flux_model.receiver.aim_z.flatten()
+    plt.scatter(x,y,color='r',marker='x')
+    plt.savefig(fname, dpi = 2000)
+    plt.cla()
+    plt.clf()
 
 def plot_defocused(outputs,fname):
     """

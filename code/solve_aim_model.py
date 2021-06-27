@@ -121,7 +121,7 @@ def solveDecomposedModel(case_name, case_filename,hour_id = None,
     build_and_solve_time = elapsed_1+elapsed_2
     print("Total computing time: ",(elapsed_1+elapsed_2+elapsed_3))
     outputs.setSolveTime(build_and_solve_time)
-    return outputs,fm
+    return outputs
             
         
 def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, decomp = False, parallel = True,
@@ -151,14 +151,11 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
     None.Writes results into CSV and creates plots
     """
     if decomp:
-        results,fm = solveDecomposedModel(case_name, case_filename,hour_id, parallel)
+        results = solveDecomposedModel(case_name, case_filename,hour_id, parallel)
     else: 
         results = solveModelDirectly(case_name, case_filename)
     if plots:
-        if plot_meas != False:
-            results.plotOutputs(case_name,fm)
-        else:
-            results.plotOutputs(case_name)
+        results.plotOutputs(case_name)
     if print_outputs:
         results.printOutput(case_name)
     rw = 'a' if append else 'w'
