@@ -125,7 +125,7 @@ def solveDecomposedModel(case_name, case_filename,hour_id = None,
             
         
 def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, decomp = False, parallel = True,
-            plots = True, print_outputs = True, append=False, plot_meas = False):
+            plots = True, print_outputs = True, append=False):
     """
     Run aimpoint optimization for any specific hour 
 

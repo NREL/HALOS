@@ -269,7 +269,6 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     ----------
     outputs : outputs : output - results - from the optimization model 
     fname : Filename for saving plot
-    fm: Optional to pass in to create a plot overlapping measurement and aim points. Pass in by adding plot_meas=True as an input to solve_aim_model.runHourlyCase in main.py.
 
     """
     x = outputs.flux_model.receiver.aim_x.flatten()
@@ -280,6 +279,15 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     plt.clf()
 
 def plot_measurement_and_aimpoints(outputs,fname):
+    """
+    Plots graph overlapping measurement and aimpoints. 
+
+    Parameters
+    ----------
+    outputs : outputs : output - results - from the optimization model 
+    fname : Filename for saving plot
+    
+    """
     z_plot = outputs.flux_model.receiver.z[:,0]
     x_plot = -5*np.ones(len(z_plot))
     plt.scatter(x_plot,z_plot,color='k',s=8)
