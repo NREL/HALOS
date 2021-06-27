@@ -106,11 +106,16 @@ class FluxModel(object):
             print("No fraction maps generation - Flat Plate")
             pass
 
+    def plotMeasurementPts(self):
+        z_plot = self.receiver.z[:,0]
+        x_plot = -5*numpy.ones(len(z_plot))
+        plt.scatter(x_plot,z_plot,color='k',s=8)
+        plt.savefig('meas_and_aim_pts')
 
     def addSettings(self,settings):
         self.settings = settings
-        
-        
+
+
     def HermiteConvolution(self, aim_loc, measure_loc):
         pass  # do the hermite evaluation
 

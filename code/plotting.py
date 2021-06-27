@@ -9,7 +9,6 @@ import scipy
 import scipy.stats
 import numpy as np
 
-
 def get_grid_points(lb, ub, num_pts):
     return lb + (ub - lb) * (np.arange(num_pts, dtype=float)) / (num_pts - 1)
 
@@ -262,7 +261,7 @@ def plot_optimal_aimpoint_allocation(outputs,fname):
     plt.cla()
     plt.clf()
     
-def plot_optimal_aimpoint_guide(outputs,fname):
+def plot_optimal_aimpoint_guide(outputs,fname,fm=None):
     """
     Plots Aimpoint Guide. 
 
@@ -270,6 +269,7 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     ----------
     outputs : outputs : output - results - from the optimization model 
     fname : Filename for saving plot
+    fm: Optional to pass in to create a plot overlapping measurement and aim points. Pass in by adding plot_meas=True as an input to solve_aim_model.runHourlyCase in main.py.
 
     """
     x = outputs.flux_model.receiver.aim_x.flatten()
@@ -278,6 +278,12 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     plt.savefig(fname, dpi= 2000)
     plt.cla()
     plt.clf()
+
+    if fm != None:
+        plt.scatter(x,y,color='r',marker='x')
+        fm.plotMeasurementPts()
+        plt.cla()
+        plt.clf()
 
 def plot_defocused(outputs,fname):
     """

@@ -121,11 +121,11 @@ def solveDecomposedModel(case_name, case_filename,hour_id = None,
     build_and_solve_time = elapsed_1+elapsed_2
     print("Total computing time: ",(elapsed_1+elapsed_2+elapsed_3))
     outputs.setSolveTime(build_and_solve_time)
-    return outputs
+    return outputs,fm
             
         
 def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, decomp = False, parallel = True,
-            plots = True, print_outputs = True, append=False):
+            plots = True, print_outputs = True, append=False, plot_meas = False):
     """
     Run aimpoint optimization for any specific hour 
 
@@ -151,11 +151,14 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
     None.Writes results into CSV and creates plots
     """
     if decomp:
-        results = solveDecomposedModel(case_name, case_filename,hour_id, parallel)
+        results,fm = solveDecomposedModel(case_name, case_filename,hour_id, parallel)
     else: 
         results = solveModelDirectly(case_name, case_filename)
     if plots:
-        results.plotOutputs(case_name)
+        if plot_meas != False:
+            results.plotOutputs(case_name,fm)
+        else:
+            results.plotOutputs(case_name)
     if print_outputs:
         results.printOutput(case_name)
     rw = 'a' if append else 'w'
