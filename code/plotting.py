@@ -288,8 +288,8 @@ def plot_measurement_and_aimpoints(outputs,fname):
     fname : Filename for saving plot
     
     """
-    z_plot = outputs.flux_model.receiver.z[:,0]
-    x_plot = -5*np.ones(len(z_plot))
+    z_plot = outputs.flux_model.receiver.z.flatten()
+    x_plot = outputs.flux_model.receiver.x.flatten()
     plt.scatter(x_plot,z_plot,color='k',s=8)
     x = outputs.flux_model.receiver.aim_x.flatten()
     y = outputs.flux_model.receiver.aim_z.flatten()
