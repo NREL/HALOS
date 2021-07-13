@@ -224,6 +224,35 @@ def plot_flux_violation(outputs,fname):
     # plt.savefig(fname+"_col_max")
     # plt.cla()
     # plt.clf()
+
+def plot_flux_slack(outputs,fname):
+    """
+    Plots heatmap of flux_slack at each measurement point. A value of zero is assigned to those
+    points at which the flux constraint is 'tight'
+
+    Parameters
+    ----------
+    outputs : output - results - from the optimization model
+    fname : Filename for saving plot
+
+    Returns
+    -------
+    Plots heatmap
+
+    """
+    pts_ht = outputs.flux_model.receiver.params["pts_per_ht_dim"]
+    pts_len = outputs.flux_model.receiver.params["pts_per_len_dim"]
+    flux_ub = outputs.flux_model.receiver.flux_upper_limits
+    flux = outputs.flux_map
+    flux_slack = np.zeros_like(flux)
+    for m in range(len(flux)):
+        flux_slack[m] = max(0.0, flux_ub[m]-flux[m])
+    flux_slack = np.array(flux_slack).reshape(pts_ht,pts_len)
+    plt.imshow(flux_slack, cmap='hot')
+    plt.colorbar()
+    plt.savefig(fname)
+    plt.cla()
+    plt.clf()
     
 def plot_field(outputs,fname):
     """
