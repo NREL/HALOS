@@ -202,7 +202,6 @@ class AimpointOptimizer(object):
                 flux_ubs[i+1] = self.flux_model.receiver.flux_upper_limits[i] * fraction      
             surface_area[i+1] = self.flux_model.receiver.surface_area[i]
             obj_by_point[i+1] = self.flux_model.receiver.obj_by_point[i]
-        
         #if specifying flux maps from a file, do so. #TODO remove this as the .csv's method will replace
         try: 
             if self.params["flux_from_file"]:
@@ -210,7 +209,7 @@ class AimpointOptimizer(object):
                 return flux, flux_lbs, flux_ubs, surface_area, obj_by_point
         except KeyError:
             pass
-        flux = {} 
+        flux = {}
         for h in self.model.heliostats:
             center_idx = self.flux_model.receiver.num_aimpoints//2
             h_map = self.flux_model.ShiftImage_GenerateSingleHeliostatFluxMaps(h,solar_vector,approx)
@@ -286,7 +285,6 @@ class AimpointOptimizer(object):
     def generateVariables(self):
         self.model.select_aimpoint = pe.Var(self.model.heliostats * self.model.aimpoints, domain=pe.Binary)
         self.model.defocus = pe.Var(self.model.heliostats, domain=pe.NonNegativeReals, bounds=(0,1))
-
 
     def getHeliostatOrdering(self, method="eff"):
         """
@@ -419,11 +417,10 @@ class AimpointOptimizer(object):
         self.aimpoint_select_map = numpy.zeros(self.flux_model.field.x.size)
         self.contribution_by_heliostat = numpy.zeros([self.flux_model.field.x.size, self.model.num_measurement_points])
         self.num_defocused_heliostats = 0
-        
         for h in self.model.heliostats:
             if self.model.defocus[h].value > 0.5:
                 self.num_defocused_heliostats += 1
-            else: 
+            else:
                 for a in self.model.aimpoints:
                     if self.model.select_aimpoint[h,a].value > 0.5:
                         self.aimpoint_select_map[h-1] = a
@@ -435,14 +432,21 @@ class AimpointOptimizer(object):
             # TODO parse the results text to obtain the gap when pyomo times out
         else:
             ub = pe.value(self.model.OBJ) * (self.gap + 1)
-        d = {"flux_map":self.flux_map, 
+        d = {
+            "flux_map":self.flux_map, 
              "aimpoint_select_map":self.aimpoint_select_map,
              "obj_value":pe.value(self.model.OBJ), 
              "num_defocused_heliostats":self.num_defocused_heliostats,
              "upper_bound":ub,
              "contribution_by_heliostat":self.contribution_by_heliostat,
              "section_id":self.params["section_id"],
-             "utilization": 1.0 - (float(self.num_defocused_heliostats) / self.num_heliostats)}
+             "utilization": 1.0 - (float(self.num_defocused_heliostats) / self.num_heliostats),
+             "defocused heliostat ids": self.defocused_h_ids,
+             "flux_ham":self.model.flux,
+             "measurement_pts":self.model.measurement_points,
+             "aimpoints":self.model.aimpoints,
+             "surface_area":self.model.surface_area,
+             }
         return d
 
 

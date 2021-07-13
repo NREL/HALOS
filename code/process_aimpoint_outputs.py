@@ -4,15 +4,21 @@ HALOS Aimpoint Optimization Model's Output Processing Module
 
 """
 import numpy
-import pyomo.environ as pe
+#import pyomo.environ as pe
+import optimize_aimpoint
 
 
 class AimpointOptOutputs(object):
     def __init__(self, results, flux_model):
         self.flux_model = flux_model
+        # if decide to make post_refocus an input again
+        self.post_num_defocused = 0
+        self.new_obj = 0
         if type(results) is list:
             self.processSubproblemOutputs(results)
             self.removeFluxViolation()
+            self.refocusHeliostats()
+            self.newObj()
         else:
             self.processFullProblemOutputs(results)
     
@@ -35,6 +41,10 @@ class AimpointOptOutputs(object):
         self.num_defocused_heliostats = d["num_defocused_heliostats"]
         self.utilization_by_section = float(d["num_defocused_heliostats"]) / self.flux_model.field.num_heliostats
         self.contribution_by_heliostat = d["contribution_by_heliostat"]
+        self.measurement_points = d["measurement_pts"]
+        self.flux_ham = d["flux_ham"]
+        self.surface_area = d["surface_area"]
+
                     
     def processSubproblemOutputs(self, ds):
         """
@@ -52,6 +62,13 @@ class AimpointOptOutputs(object):
         self.num_defocused_heliostats = 0
         self.utilization_by_section = numpy.zeros(self.flux_model.field.num_sections)
         self.contribution_by_heliostat = numpy.zeros([self.flux_model.field.x.size,self.flux_model.receiver.x.size])
+        self.aimpoints = []
+        self.measurement_points = []
+        self.flux_ham = {}
+        self.surface_area = {}
+        self.heliostats = []
+        self.obj_by_point = {}
+
         for d in ds:
             self.flux_map += d["flux_map"]
             self.aimpoint_select_map += d["aimpoint_select_map"]
@@ -59,6 +76,11 @@ class AimpointOptOutputs(object):
             self.num_defocused_heliostats += d["num_defocused_heliostats"]
             self.contribution_by_heliostat += d["contribution_by_heliostat"]
             self.utilization_by_section[d["section_id"]] = d["utilization"]
+            if d["section_id"] == 1:
+                self.aimpoints += d["aimpoints"]
+                self.measurement_points = d["measurement_pts"]
+            self.flux_ham.update(d["flux_ham"])
+            self.surface_area.update(d["surface_area"])
     
     def plotOutputs(self, case_name=""):
         """
@@ -139,8 +161,58 @@ class AimpointOptOutputs(object):
         m_rows = self.flux_model.receiver.params["pts_per_ht_dim"]
         m_cols = self.flux_model.receiver.params["pts_per_len_dim"]
         self.flux_violation.reshape(m_rows,m_cols)
+
+
+    def refocusHeliostats(self, threshold=1.0e-3):
+        '''
+        Adds previously defocused heliostats from the model if doing so does not violate flux limits.
+        For each previously defocused heliostat, cycles through the possible aimpoints to see 
+        if for one of them the additional flux added to each of the measurement pts does not 
+        violate any flux limit. Each heliostat refocuses on the first aimpoint for which it 
+        can focus without violating flux limits.
+        '''
         
-        
+        # obtain list of heliostat ids that are defocused
+        defoc_dict = {}
+        defoc_list = []
+        for h in range(len(self.aimpoint_select_map)):
+            defoc_dict[h] = self.aimpoint_select_map[h]
+            if defoc_dict[h] == 0:
+                defoc_list.append(h)
+        print('defoc list from aimpt map: ',defoc_list)
+        self.post_num_defocused = self.num_defocused_heliostats
+        self.h_refocused = []
+        self.a_refocused = []
+        for h in defoc_list:
+            for a in self.aimpoints:
+                for m in self.measurement_points:
+                    self.flux_map += self.flux_ham[h,m,a]
+                # calculate flux violation with this new flux map
+                self.getFluxViolation()
+                # if violates flux, delete the flux contribution of h-a combo on each m
+                if self.flux_violation.max() > threshold:
+                    for m in self.measurement_points:
+                        self.flux_map -= self.flux_ham[h,m,a]
+                # otherwise no flux limit violated and the heliostat is refocused to that aimpoint
+                else: 
+                    self.post_num_defocused -= 1
+                    self.h_refocused.append(h)
+                    self.a_refocused.append(a)
+
+    def newObj(self):
+        '''
+        Adds contributions of any refocused heliostats to the previously calculated obj val
+        '''
+        post_add_obj = 0
+        for i in range(len(self.h_refocused)):
+            h = self.h_refocused[i]
+            a = self.a_refocused[i]
+            print('heliostat ',h,'refocuses at aimpoint ',a)
+            for m in self.measurement_points:
+                post_add_obj += self.surface_area[m]* self.flux_ham[h,m,a]
+
+        self.new_obj = post_add_obj + self.obj_value
+
     def printOutput(self, case_name, console = False):
         """
         Write/print outputs as CSV
@@ -159,7 +231,11 @@ class AimpointOptOutputs(object):
         """
         ofile = open(case_name+"_solution.csv",'w')
         ofile.write("obj_value: "+str(self.obj_value)+"\n\n")
+        if self.new_obj != 0:
+            ofile.write("new_obj: "+str(self.new_obj)+"\n\n")
         ofile.write("defocused heliostats: "+str(self.num_defocused_heliostats)+"\n\naimpoint summary:\n")
+        if self.post_num_defocused != 0:
+            ofile.write("post defocused heliostats: "+str(self.post_num_defocused)+"\n\naimpoint summary:\n")
         ofile.write("heliostat_id,aimpoint_id\n")
         for h in range(len(self.aimpoint_select_map)):
             ofile.write(str(h)+","+str(self.aimpoint_select_map[h])+"\n")
