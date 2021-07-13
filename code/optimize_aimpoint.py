@@ -99,7 +99,7 @@ class AimpointOptimizer(object):
         self.params["flux_constraint_limit"] = 500 /params["num_sections"]
         self.solver = params.get("solver")
         if self.solver is None:
-            self.solver = "cplex"
+            self.solver = "cbc"
 
     def generateMeasurementSubset(self):
         measurement_points = []
