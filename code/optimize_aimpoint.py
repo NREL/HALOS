@@ -441,7 +441,6 @@ class AimpointOptimizer(object):
              "contribution_by_heliostat":self.contribution_by_heliostat,
              "section_id":self.params["section_id"],
              "utilization": 1.0 - (float(self.num_defocused_heliostats) / self.num_heliostats),
-             "defocused heliostat ids": self.defocused_h_ids,
              "flux_ham":self.model.flux,
              "measurement_pts":self.model.measurement_points,
              "aimpoints":self.model.aimpoints,

@@ -44,6 +44,7 @@ class AimpointOptOutputs(object):
         self.measurement_points = d["measurement_pts"]
         self.flux_ham = d["flux_ham"]
         self.surface_area = d["surface_area"]
+        self.aimpoints = d["aimpoints"]
 
                     
     def processSubproblemOutputs(self, ds):
@@ -67,7 +68,6 @@ class AimpointOptOutputs(object):
         self.flux_ham = {}
         self.surface_area = {}
         self.heliostats = []
-        self.obj_by_point = {}
 
         for d in ds:
             self.flux_map += d["flux_map"]
