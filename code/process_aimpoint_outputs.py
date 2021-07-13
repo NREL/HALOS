@@ -107,6 +107,7 @@ class AimpointOptOutputs(object):
         else:
             plotting.plot_field(self,case_name+"_field")
         plotting.plot_flux_violation(self, case_name+"_violation")
+        plotting.plot_flux_slack(self, case_name+"_slack")
         
     def getFluxViolation(self):
         """

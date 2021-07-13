@@ -99,7 +99,7 @@ class AimpointOptimizer(object):
         self.params["flux_constraint_limit"] = 500 /params["num_sections"]
         self.solver = params.get("solver")
         if self.solver is None:
-            self.solver = "cbc"
+            self.solver = "cplex"
 
     def generateMeasurementSubset(self):
         measurement_points = []
@@ -263,6 +263,7 @@ class AimpointOptimizer(object):
             self.getHeliostatOrdering(self.params["order_method"])
         self.model.flux_constraint_limit = self.params["flux_constraint_limit"]
 
+
     def printFluxToFile(self,filename):
         """
         Write Flux to a CSV File
@@ -353,7 +354,7 @@ class AimpointOptimizer(object):
         Parameters
         ----------
         mipgap : 
-            optimality gap. The default is 0.01.
+            optimality gap. The default is 0.001.
         timelimit : 
             Time limit for the solve in seconds. The default is 300.
         solver : 
