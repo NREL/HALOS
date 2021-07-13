@@ -147,11 +147,6 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
         If True: Appends hourly results into the main csv summary file
     bigfile:
         If passed in, to create summary csv with a row for each case run.
-    post_refocus :
-        after running optimization model, loop through each defocused heliostat to see
-        whether it can point at an aimpt without violating a flux limit -- taken out for now
-        comment out refocusHeliostat and newObj in process_aimpoint_outputs if don't want to run 
-        post_defocus for now
 
     Returns
     -------
@@ -168,7 +163,7 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
     rw = 'a' if append else 'w'
     ofile = open(main_case_name+"_summary.csv",rw)
     if not append:
-        ofile.write("case_name,obj_value,num_defocused_heliostats,solve_time,post_num_defoc,post_obj\n")
+        ofile.write("case_name,obj_value,num_defocused_heliostats,solve_time,post_obj,post_num_defoc\n")
     ofile.write(case_name+","+str(results.obj_value)+","+str(results.num_defocused_heliostats)+","+str(results.solve_time)+","+str(results.new_obj)+","+str(results.post_num_defocused)+"\n")
     ofile.close()
     from csv import writer

@@ -4,21 +4,30 @@ HALOS Aimpoint Optimization Model's Output Processing Module
 
 """
 import numpy
-#import pyomo.environ as pe
 import optimize_aimpoint
 
-
 class AimpointOptOutputs(object):
-    def __init__(self, results, flux_model):
+    def __init__(self, results, flux_model,post_refocus = True):
+        '''
+        Parameters
+        ------------
+        post_refocus :
+            If post_refocus = True: after running optimization model, loop through each 
+            defocused heliostat to see whether it can point at an aimpoint without violating a flux limit.
+            Set post_refocus to False in __init__ of AimpointOptOutputs in process_aimpoint_outputs
+            to exclude this step.
+            Note: Not included as an input to solve_aim_model because of associated pyomo errors.
+        '''
         self.flux_model = flux_model
-        # if decide to make post_refocus an input again
+        # so prints zeros in these places if post_refocus = False
         self.post_num_defocused = 0
         self.new_obj = 0
         if type(results) is list:
             self.processSubproblemOutputs(results)
             self.removeFluxViolation()
-            self.refocusHeliostats()
-            self.newObj()
+            if post_refocus:
+                self.refocusHeliostats()
+                self.newObj()
         else:
             self.processFullProblemOutputs(results)
     
@@ -167,7 +176,7 @@ class AimpointOptOutputs(object):
         '''
         Adds previously defocused heliostats from the model if doing so does not violate flux limits.
         For each previously defocused heliostat, cycles through the possible aimpoints to see 
-        if for one of them the additional flux added to each of the measurement pts does not 
+        if for one of them the additional flux added to each of the measurement points does not 
         violate any flux limit. Each heliostat refocuses on the first aimpoint for which it 
         can focus without violating flux limits.
         '''
@@ -179,7 +188,7 @@ class AimpointOptOutputs(object):
             defoc_dict[h] = self.aimpoint_select_map[h]
             if defoc_dict[h] == 0:
                 defoc_list.append(h)
-        print('defoc list from aimpt map: ',defoc_list)
+        #print('defoc list from aimpt map: ',defoc_list)
         self.post_num_defocused = self.num_defocused_heliostats
         self.h_refocused = []
         self.a_refocused = []
