@@ -344,13 +344,15 @@ class FluxModel(object):
             aim_cols = 1
             #PARALLEL FLUX
             map_center = self.parallel_flux_maps[helio_idx]
-            shift_size = round(len(map_center)/aim_rows)
+            x_shift_size = 0
+            y_shift_size = round(len(map_center)/aim_rows)
 
         elif self.receiver.params["receiver_type"] == "Flat plate":
             center_idx = len(self.receiver.aimpoints) // 2
             map_center = self.parallel_flux_maps[helio_idx]
             aim_cols = int(self.receiver.params["aim_cols"])
-            shift_size = round(len(map_center)/aim_cols)
+            x_shift_size = round(len(map_center)/aim_cols)
+            y_shift_size = round(len(map_center)/aim_rows)
         map_center = numpy.array(map_center)   
         center_map = map_center.flatten()
         if not (self.use_sp_flux or self.read_flux_from_file):
@@ -365,14 +367,14 @@ class FluxModel(object):
             for x_shift in range(0,(aim_cols//2)+1): #Similarly x_shift 0 is center column where as +2 is ahead and -2 is behind
                 ## Center Line
                 ## Positive in x moves ahead - Positive in y here moves down
-                x_frwd = shift_2d_array(map_center, x_shift*shift_size, y_shift*shift_size, constant=0)
+                x_frwd = shift_2d_array(map_center, x_shift*x_shift_size, y_shift*y_shift_size, constant=0)
                 ##TO PLOT
                 # im = plt.imshow(x_frwd)
                 # plt.colorbar(im)
                 # plt.tight_layout()
                 # plt.show()
                 maps[center_idx + (aim_cols * y_shift) + x_shift] = factor * x_frwd.flatten()
-                x_bcwd = shift_2d_array(map_center, - x_shift*shift_size, y_shift*shift_size, constant=0)
+                x_bcwd = shift_2d_array(map_center, - x_shift*x_shift_size, y_shift*y_shift_size, constant=0)
                 ##TO PLOT
                 # im = plt.imshow(x_bcwd)
                 # plt.colorbar(im)
@@ -380,9 +382,9 @@ class FluxModel(object):
                 # plt.show()
                 maps[center_idx + (aim_cols * y_shift) - x_shift] = factor * x_bcwd.flatten()
                 ## Negative in x moves behind - Negative in y here moves up from center
-                x_frwd = shift_2d_array(map_center, x_shift*shift_size, - y_shift*shift_size, constant=0)
+                x_frwd = shift_2d_array(map_center, x_shift*x_shift_size, - y_shift*y_shift_size, constant=0)
                 maps[center_idx - (aim_cols * y_shift) + x_shift] = factor * x_frwd.flatten()
-                x_bcwd = shift_2d_array(map_center, - x_shift*shift_size, - y_shift*shift_size, constant=0)
+                x_bcwd = shift_2d_array(map_center, - x_shift*x_shift_size, - y_shift*y_shift_size, constant=0)
                 maps[center_idx - (aim_cols * y_shift) - x_shift] = factor * x_bcwd.flatten()
         #print(maps.keys())   ##Indexes Tested - Image shift tested using plotting
         return maps
