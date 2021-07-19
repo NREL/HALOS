@@ -317,9 +317,15 @@ def plot_measurement_and_aimpoints(outputs,fname):
     fname : Filename for saving plot
     
     """
+    # plot measurement points
     z_plot = outputs.flux_model.receiver.z.flatten()
-    x_plot = outputs.flux_model.receiver.x.flatten()
+    if outputs.flux_model.receiver.params["receiver_type"] == "Flat plate":
+        x_plot = outputs.flux_model.receiver.aim_x.flatten()
+    elif outputs.flux_model.receiver.params["receiver_type"] == "External cylindrical":
+        x_plot  = -5*np.ones(len(z_plot))
     plt.scatter(x_plot,z_plot,color='k',s=8)
+
+    # plot aim points on the same graph
     x = outputs.flux_model.receiver.aim_x.flatten()
     y = outputs.flux_model.receiver.aim_z.flatten()
     plt.scatter(x,y,color='r',marker='x')
