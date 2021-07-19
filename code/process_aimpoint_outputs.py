@@ -208,6 +208,8 @@ class AimpointOptOutputs(object):
                     self.post_num_defocused -= 1
                     self.h_refocused.append(h)
                     self.a_refocused.append(a)
+                    # so heliostat refocuses only at the first aimpoint for which it can
+                    break
 
     def newObj(self):
         '''
