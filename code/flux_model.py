@@ -47,7 +47,7 @@ def ReadWeatherFile(weather_file, get_angles=False):
     month_idx = keys.index("Month")
     day_idx = keys.index("Day")
     hour_idx = keys.index("Hour")
-    if d["Source"] == "IWEC" or "INTL":
+    if d["Source"] == "IWEC" or d["Source"]=="INTL":
         dni_idx = keys.index("Beam")
     else:
         dni_idx = keys.index("DNI")
