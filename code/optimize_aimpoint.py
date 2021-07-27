@@ -347,7 +347,7 @@ class AimpointOptimizer(object):
         self.genConstraintsBinOnly()
 
 
-    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
+    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=True):
         """
         Solves the optimization model 
 
@@ -374,8 +374,8 @@ class AimpointOptimizer(object):
         """
         if warmstart: 
             import opt_heuristic
-            heuristic = opt_heuristic.AcceptRejectHeuristic(3)
-            heuristic.getIFS(self.model)
+            heuristic = opt_heuristic.CenterOut(3)
+            self.obj_val_feas_add, self.time_add = heuristic.getIFS(self.model)
         opt = pe.SolverFactory(self.solver)
         if self.solver == "cbc":
             opt.options["ratioGap"] = mipgap
@@ -433,6 +433,8 @@ class AimpointOptimizer(object):
             # TODO parse the results text to obtain the gap when pyomo times out
         else:
             ub = pe.value(self.model.OBJ) * (self.gap + 1)
+
+        
         d = {
             "flux_map":self.flux_map, 
              "aimpoint_select_map":self.aimpoint_select_map,
@@ -446,6 +448,8 @@ class AimpointOptimizer(object):
              "measurement_pts":self.model.measurement_points,
              "aimpoints":self.model.aimpoints,
              "surface_area":self.model.surface_area,
+             "obj_val_feas_add":self.obj_val_feas_add,
+             "time_add":self.time_add
              }
         return d
 

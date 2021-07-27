@@ -19,6 +19,7 @@ class Heuristic(object):
     optimization model."""
     def __init__(self,name):
         self.name = name
+        self.obj_val = 0
         
     def getName():
         return self.name
@@ -34,12 +35,17 @@ class Heuristic(object):
             else: 
                 #defocus heliostat
                 model.defocus[helio_list[h]] = 1
+        
     
     def attemptToAim(self, model, flux, a, h):
         added_flux = numpy.array([model.flux[h,m,a] for m in model.measurement_points])
         if any(flux+added_flux > model.flux_ubs):
-            return flux, -1, False
-        return flux+added_flux, a, True
+            return flux,self.obj_val, -1, False
+        else:
+            for m in model.measurement_points:
+                self.obj_val += model.flux[h,m,a]*model.surface_area[m]
+            return flux+added_flux, self.obj_val, a, True
+
         
 
 class AcceptRejectHeuristic(Heuristic):
@@ -60,13 +66,15 @@ class AcceptRejectHeuristic(Heuristic):
                 if success: break
                 #a = random.choice(aim_list)
                 a = aim_list[int(self.gen.getVariate()*len(model.aimpoints))]
-                flux, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
+                flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
             if success:
                 aimpoint_select[h] = aim_idx
         self.updateVals(model, aimpoint_select, flux)
         t_end = time.time()
-        print('time taken for initital heuristic: ',t_end-t_start)
-    
+        print('time taken for initital heuristic section: ',t_end-t_start)
+        #print('AcceptReject heuristic ran')
+        print('obj val: ',obj_val)
+        return(obj_val,t_end-t_start)
     
     
 class SpreadHeuristic(Heuristic):
@@ -87,7 +95,7 @@ class SpreadHeuristic(Heuristic):
                 aim_idx += 1
                 aim_idx = aim_idx % len(aim_list)
                 print("attempting aimpoint ",aim_idx)    
-                flux, a, success = self.attemptToAim(model, flux, aim_list[aim_idx], helio_list[h])
+                flux, obj_val, a, success = self.attemptToAim(model, flux, aim_list[aim_idx], helio_list[h])
             if success:
                 aimpoint_select[h] = a
                 aim_idx += 1
@@ -98,6 +106,7 @@ class SpreadHeuristic(Heuristic):
                 print("heuristic terminated at heliostat #",h)
                 break
         self.updateVals(model, aimpoint_select, flux)
+        print('obj val: ',obj_val)
 
 
 class CenterOut(Heuristic):
@@ -106,6 +115,7 @@ class CenterOut(Heuristic):
         self.num_tries = num_tries
 
     def getIFS(self,model):
+        t_start = time.time()
         helio_list = list(model.heliostats)
         aim_list = list(model.aimpoints)
         aimpoint_select = numpy.zeros(len(helio_list), dtype=int)
@@ -121,10 +131,15 @@ class CenterOut(Heuristic):
                     a = a_cent - math.floor(i/2) # 1st round -> a_1, 3rd round -> 1 below a_1, 5th round -> 2 below a_1 and so on
                 else:
                     a = a_cent + i//2  # 2nd round -> 1 above a_1, 4th round -> 2 above a_1, and so on
-                flux, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
+                flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
             if success:
                 aimpoint_select[h] = aim_idx
         self.updateVals(model, aimpoint_select, flux)
+        print('CenterOut heuristic ran')
+        t_end = time.time()
+        print('time taken for initital heuristic: ',t_end-t_start)
+        print('obj val: ',obj_val)
+        return(obj_val,t_end-t_start)
 
 
 class WeightedCenter(Heuristic):
@@ -158,13 +173,16 @@ class WeightedCenter(Heuristic):
             for n in range(self.num_tries):
                 #a = random.choice(aim_list) # if use random.choice instead off WELL512 - seems to have similar times and all
                 a = aim_list[int(self.gen.getVariate()*len(model.aimpoints))]
-                flux, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
+                flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
                 if success: break # put this line at end instead of beginning
             if success:
                 aimpoint_select[h] = aim_idx
         self.updateVals(model, aimpoint_select, flux)
         t_end = time.time()
         print('time taken for initital heuristic: ',t_end-t_start)
+        print('Weighted Center heuristic ran')
+        print('obj val: ',obj_val)
+        return(obj_val,t_end-t_start)
 
 
 
@@ -175,6 +193,7 @@ class FluxSize(Heuristic):
         self.gen = WELL512.WELL512("rngstates.csv")
 
     def getIFS(self,model):
+        t_start = time.time()
         helio_list = list(model.heliostats)
         print('heliostats: ',helio_list)
         aim_list = list(model.aimpoints)
@@ -207,7 +226,12 @@ class FluxSize(Heuristic):
                         list_to_change.append(aim_list[0])
                     # heliostats in 2nd smallest 1/8 of field point at bottom aimpoint
                 a = list_to_change[int(self.gen.getVariate()*len(model.aimpoints))]
-                flux, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
+                flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
                 if success:
                     aimpoint_select[h] = aim_idx
         self.updateVals(model, aimpoint_select, flux)
+        t_end = time.time()
+        print('time taken for initital heuristic: ',t_end-t_start)
+        print('FluxSize heuristic ran')
+        print('obj val: ',obj_val)
+        return(obj_val,t_end-t_start)

@@ -163,14 +163,14 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
     rw = 'a' if append else 'w'
     ofile = open(main_case_name+"_summary.csv",rw)
     if not append:
-        ofile.write("case_name,obj_value,num_defocused_heliostats,solve_time,post_obj,post_num_defoc\n")
-    ofile.write(case_name+","+str(results.obj_value)+","+str(results.num_defocused_heliostats)+","+str(results.solve_time)+","+str(results.new_obj)+","+str(results.post_num_defocused)+"\n")
+        ofile.write("case_name,obj_value,num_defocused_heliostats,solve_time,init_feas_obj,init_feas_time,post_obj,post_num_defoc\n")
+    ofile.write(case_name+","+str(results.obj_value)+","+str(results.num_defocused_heliostats)+","+str(results.solve_time)+","+str(results.obj_val_feas_add)+","+str(results.time_add)+","+str(results.new_obj)+","+str(results.post_num_defocused)+"\n")
     ofile.close()
     from csv import writer
     if bigfile != None:
         with open(bigfile,'a+',newline='') as write_obj:
             csv_writer = writer(write_obj)
-            row1 = [case_name,str(results.obj_value),str(results.num_defocused_heliostats), str(results.solve_time), str(results.new_obj), str(results.post_num_defocused)]
+            row1 = [case_name,str(results.obj_value),str(results.num_defocused_heliostats), str(results.solve_time), str(results.obj_val_feas_add),str(results.time_add),str(results.new_obj), str(results.post_num_defocused)]
             csv_writer.writerow(row1)
     
 def runSPHourlyCase(main_case_name,case_name, case_filename, hour_id = None, append = False, weather_data = None, sp_aimpoint_heur = True):
