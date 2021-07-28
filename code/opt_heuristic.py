@@ -60,6 +60,7 @@ class AcceptRejectHeuristic(Heuristic):
         aim_list = list(model.aimpoints)
         aimpoint_select = numpy.zeros(len(helio_list), dtype=float)
         flux = numpy.zeros(len(model.measurement_points), dtype=float)
+        defocused_helio = []
         for h in range(len(helio_list)):
             success = False
             for i in range(self.num_tries):
@@ -69,12 +70,14 @@ class AcceptRejectHeuristic(Heuristic):
                 flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
             if success:
                 aimpoint_select[h] = aim_idx
+            else:
+                defocused_helio.append(h)
         self.updateVals(model, aimpoint_select, flux)
         t_end = time.time()
         print('time taken for initital heuristic section: ',t_end-t_start)
         #print('AcceptReject heuristic ran')
         print('obj val: ',obj_val)
-        return(obj_val,t_end-t_start)
+        return(obj_val,t_end-t_start,len(defocused_helio))
     
     
 class SpreadHeuristic(Heuristic):
@@ -184,7 +187,44 @@ class WeightedCenter(Heuristic):
         print('obj val: ',obj_val)
         return(obj_val,t_end-t_start)
 
+class SpecificthenRandom(Heuristic):
+    def __init__(self,num_tries):
+        Heuristic.__init__(self,"fartherin_centerout")
+        self.gen = WELL512.WELL512("rngstates.csv")
+        self.num_tries = num_tries
 
+    def getIFS(self,model):
+        t_start = time.time()
+        helio_list = list(model.heliostats)
+        aim_list = list(model.aimpoints)
+        flux = numpy.zeros(len(model.measurement_points), dtype=float)
+        aimpoint_select = numpy.zeros(len(helio_list), dtype=float)
+        defocused_helio = []
+        
+        center_idx = math.ceil(len(aim_list) / 2)
+        for h in range(len(helio_list)):
+            success = False
+            for n in range(self.num_tries):
+                if n == 0:
+                    # could also make this weighted random generation
+                    a = aim_list[center_idx]
+                else:
+                    #a = random.choice(aim_list) # if use random.choice instead off WELL512 - seems to have similar times and all
+                    a = aim_list[int(self.gen.getVariate()*len(model.aimpoints))]
+                flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
+                if success: break # put this line at end instead of beginning
+            if success:
+                aimpoint_select[h] = aim_idx
+                if a == aim_list[center_idx]:
+                    print('heliostat aims at ',a)
+            if not success:
+                defocused_helio.append(defocused_helio)
+        self.updateVals(model, aimpoint_select, flux)
+        t_end = time.time()
+        print('time taken for initital heuristic: ',t_end-t_start)
+        print('Middle then Random heuristic ran')
+        print('obj val: ',obj_val)
+        return(obj_val,t_end-t_start)
 
 class FluxSize(Heuristic):
     def __init__(self,num_tries):
@@ -195,43 +235,79 @@ class FluxSize(Heuristic):
     def getIFS(self,model):
         t_start = time.time()
         helio_list = list(model.heliostats)
-        print('heliostats: ',helio_list)
         aim_list = list(model.aimpoints)
-        print('aimpoints: ',aim_list)
         aimpoint_select = numpy.zeros(len(helio_list), dtype=int)
         flux = numpy.zeros(len(model.measurement_points), dtype=float)
         a_cent = math.ceil(len(aim_list) / 2) # first try the center aimpoint. if odd num aimpts, starts at center. If even aimpts, starts at below center
-        flux_size = []
+        num_zeross = []
+        defocused_helio = []
 
         for h in range(len(helio_list)):
             success = False
             flux = numpy.array([model.flux[helio_list[h],m,a_cent] for m in model.measurement_points])
             num_zeros = numpy.count_nonzero(flux == 0)
-            size = len(model.measurement_points)*len(model.measurement_points) - num_zeros
-            flux_size.append(size)
-            
+            #size = len(model.measurement_points)*len(model.measurement_points) - num_zeros
+            #flux_size.append(size) # unnecessary to use flux_sizes -- can just go by num zeros for now
+            num_zeross.append(num_zeros)
+
+        for h in range(len(helio_list)):
             for n in range(self.num_tries):
                 list_to_change = aim_list.copy()
-                # if in smallest 1/8 size of the section of heliostats, random gen weighted at top aimpt
-                if size <= sum(flux_size) / 8:
-                    for i in range(len(aim_list)*10):
-                        list_to_change.append(aim_list[-1])
-                elif size > sum(flux_size) / 4:
-                    for i in range(len(aim_list)*10):
-                        list_to_change.append(a_cent)
-                    # if in other 3/4 of field, point at randomly generated aimpt with center weighted
-                    # could add one below and one above like did in weighted heuristic if want to
-                else:
-                    for x in range(len(aim_list)*10):
-                        list_to_change.append(aim_list[0])
-                    # heliostats in 2nd smallest 1/8 of field point at bottom aimpoint
-                a = list_to_change[int(self.gen.getVariate()*len(model.aimpoints))]
+                if n == 0:
+                    # if in smallest 1/8 size of the section of heliostats, random gen weighted at top aimpt
+                    if num_zeross[h] >= sum(num_zeross)*7/8:
+                        for i in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(aim_list[-1])
+                    elif num_zeross[h] < sum(num_zeross)*7/8 and num_zeross[h] >= sum(num_zeross)*6/8:
+                        for x in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(aim_list[0])
+                    elif num_zeross[h] < sum(num_zeross)*6/8 and num_zeross[h] >= sum(num_zeross)*5/8:
+                        for x in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(aim_list[-2])
+                    elif num_zeross[h] < sum(num_zeross)*5/8 and num_zeross[h] >= sum(num_zeross)*4/8:
+                        for x in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(aim_list[1])
+                    elif num_zeross[h] < sum(num_zeross)*4/8 and num_zeross[h] >= sum(num_zeross)*3/8:
+                        list_to_change = list_to_change
+                    elif num_zeross[h] < sum(num_zeross)*4/8 and num_zeross[h] >= sum(num_zeross)*3/8:
+                        for x in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(a_cent+1)
+                    elif num_zeross[h] < sum(num_zeross)*3/8 and num_zeross[h] >= sum(num_zeross)*2/8:
+                        for x in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(a_cent-1)
+                    else:
+                        for x in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(a_cent-1)
+                '''
+                if n == 1:
+                                        # if in smallest 1/8 size of the section of heliostats, random gen weighted at top aimpt
+                    if num_zeross[h] >= sum(num_zeross)*7/8:
+                        for i in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(aim_list[-2])
+                    # if in largest 3/4 size of the section of heliostats, random gen weighted at center
+                    elif num_zeross[h] < sum(num_zeross)*6/8:
+                        for i in range(int(len(aim_list)*0.5)):
+                            list_to_change.append(a_cent+1)
+                    else:
+                        for x in range(int(len(aim_list)(0.5))):
+                            list_to_change.append(aim_list[1])
+                        # heliostats in 2nd smallest 1/8 of field point at bottom aimpoint
+                '''
+                #a = random.choice(list_to_change)
+                #print('aim idx: ',int(self.gen.getVariate()*len(list_to_change))) # all updated with using len(list_to_change)
+                a = list_to_change[int(self.gen.getVariate()*len(list_to_change))]
+                #print('chosen a is ',str(a),' for num zeros ',num_zeross[h])
                 flux, obj_val, aim_idx, success = self.attemptToAim(model, flux, a, helio_list[h])
-                if success:
-                    aimpoint_select[h] = aim_idx
+                if success: break
+            if success:
+                aimpoint_select[h] = aim_idx
+            else:
+                defocused_helio.append(h)
         self.updateVals(model, aimpoint_select, flux)
         t_end = time.time()
         print('time taken for initital heuristic: ',t_end-t_start)
         print('FluxSize heuristic ran')
         print('obj val: ',obj_val)
-        return(obj_val,t_end-t_start)
+        #print('num zeros',num_zeross)
+        print('defocused heliostats: ',len(defocused_helio))
+        return(obj_val,t_end-t_start,len(defocused_helio))
