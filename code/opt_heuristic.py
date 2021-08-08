@@ -89,6 +89,31 @@ class Heuristic(object):
         print('obj val after switching: ',obj_val)
         return flux,obj_val
 
+    def createDataFrame(self,model,helio_list,aim_list,aimpoint_select):
+        # creates dataframe with columns of heliostats, aimpoints, and number of zeros in flux image
+        # returns desired lists of heliostats from these dataframes
+        num_zeross = []
+        a_cent = math.ceil(len(aim_list) / 2)
+        for h in range(len(helio_list)):
+            fluxes = numpy.array([model.flux[helio_list[h],m,a_cent] for m in model.measurement_points])
+            num_zeros = numpy.count_nonzero(fluxes == 0)
+            num_zeross.append(num_zeros)
+        df = pd.DataFrame({'heliostats':helio_list,'aimpoints':aimpoint_select,'zeros':num_zeross})
+        top_edge = df.loc[df['aimpoints']==float(len(aim_list))]
+        bottom_edge = df.loc[df['aimpoints']==1.0]
+        middle = df.loc[df['aimpoints']==float(math.ceil(len(aim_list) / 2))]
+        edges = pd.concat([top_edge,bottom_edge])
+        if len(aim_list) >= 4:
+            mid_up = df.loc[df['aimpoints']==float(1+math.ceil(len(aim_list) / 2))]
+            middles = pd.concat([middle,mid_up])
+
+        edges.sort_values(by = 'zeros',ascending=True,inplace=True)
+        middles.sort_values(by = 'zeros',ascending=False,inplace=True)
+        mid_list = middles['heliostats'].to_list()
+        edge_list = edges['heliostats'].to_list()
+
+        return mid_list,edge_list
+
     def switchEdgeMiddle(self,model,flux,helio_list,aimpoint_select,obj_val,edge_list,middle_list):
         for h in edge_list:
             saved_flux = flux
@@ -99,7 +124,6 @@ class Heuristic(object):
             a1_old = aimpoint_select[h1_idx]
             for i in range(20):
                 h2 = middle_list[i] # because middle list ordered now
-                #h2 = random.choice(middle_list)
                 h2_idx = helio_list.index(h2)
                 a2_old = aimpoint_select[h2_idx]
                 # remove old fluxes, then attempt to add new switched aimpoint fluxes
@@ -115,7 +139,6 @@ class Heuristic(object):
                             aimpoint_select[h2_idx] = aim_idx_new_2
                             self.updateVals(model, aimpoint_select)
                             middle_list.remove(h2) # since that h now pointed at edge
-                            # could append to end of edge list but wont benefit probably since was better pointing at edge I think
                             #print('switched')
                             switched = True
                             # if successfully switched, move on to next aimpoint in edge list
@@ -126,8 +149,7 @@ class Heuristic(object):
                     #print('not better to switch')
         print('obj val after switching: ',obj_val)
         return flux,obj_val
-
-
+        
 
 class AcceptRejectHeuristic(Heuristic):
     def __init__(self, num_tries):
@@ -160,7 +182,8 @@ class AcceptRejectHeuristic(Heuristic):
         print('obj val before switching: ',obj_val)
         #flux,obj_val = self.randomSwitchPairs(model,flux,helio_list,aimpoint_select,obj_val)
         '''
-        # creating dataframes
+        # doesnt sort lists by flux size --> slightly lower power output than if do sort like I do below
+        # not shorter time either so delete very soon
         helio_aim = {'heliostats':helio_list,'aimpoints':aimpoint_select}
         df = pd.DataFrame(helio_aim,columns=['heliostats','aimpoints'])
         top_edge = df.loc[df['aimpoints']==float(len(aim_list))]
@@ -177,34 +200,11 @@ class AcceptRejectHeuristic(Heuristic):
         
         #flux,obj_val = self.switchEdgeMiddle(model,flux,helio_list,aimpoint_select,obj_val,edge_list,middle_list)
         '''
-
-        num_zeross = []
-        a_cent = math.ceil(len(aim_list) / 2)
-        for h in range(len(helio_list)):
-            fluxes = numpy.array([model.flux[helio_list[h],m,a_cent] for m in model.measurement_points])
-            num_zeros = numpy.count_nonzero(fluxes == 0)
-            num_zeross.append(num_zeros)
-        df = pd.DataFrame({'heliostats':helio_list,'aimpoints':aimpoint_select,'zeros':num_zeross})
-        top_edge = df.loc[df['aimpoints']==float(len(aim_list))]
-        bottom_edge = df.loc[df['aimpoints']==1.0]
-        middle = df.loc[df['aimpoints']==float(math.ceil(len(aim_list) / 2))]
-        edges = pd.concat([top_edge,bottom_edge])
-        if len(aim_list) >= 4:
-            mid_up = df.loc[df['aimpoints']==float(1+math.ceil(len(aim_list) / 2))]
-            middles = pd.concat([middle,mid_up])
-
-        edges.sort_values(by = 'zeros',ascending=True,inplace=True)
-        middles.sort_values(by = 'zeros',ascending=False,inplace=True)
-
-        mid_list = middles['heliostats'].to_list()
-        edge_list = edges['heliostats'].to_list()
-
+        mid_list,edge_list = self.createDataFrame(model,helio_list,aim_list,aimpoint_select)
         flux,obj_val = self.switchEdgeMiddle(model,flux,helio_list,aimpoint_select,obj_val,edge_list,mid_list)
-        
         
         # note: don't record or return flux as of now (or update flux model) but definitely could if wanted to
         return(obj_val,t_end-t_start,len(defocused_helio))
-    
     
 class SpreadHeuristic(Heuristic):
     def __init__(self):
@@ -320,7 +320,7 @@ class FluxStoreSize(Heuristic):
                     y = 1
         return aim_list
     
-    def fluxSizeMethod(self,model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross):
+    def fluxSizeMethod(self,model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross,obj_val):
         # creates 8 similarly sized/distributed groups of heliostats based on flux size
         # its group determines the aimpoint the heliostat attempts on first try (larger flux size --> closer to center)
         for h in range(len(helio_list)):
@@ -376,7 +376,7 @@ class FluxStoreSize(Heuristic):
         # aiming method 1
         flux,defocused_helio,helio_list,aimpoint_select,obj_val = self.resetValues(model)
         order = [7,0,6,1,5,2,4,3]
-        obj_val,defocused_helio,flux,aimpoint_select = self.fluxSizeMethod(model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross)
+        obj_val,defocused_helio,flux,aimpoint_select = self.fluxSizeMethod(model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross,obj_val)
         print('method 1 obj val: ',obj_val,' method 1 defocused heliostats: ',len(defocused_helio))
         if obj_val > ub:
             ub = obj_val
@@ -386,7 +386,7 @@ class FluxStoreSize(Heuristic):
         # method 2 - same as method 1 but start alternating pattern from bottom instead of top
         flux,defocused_helio,helio_list,aimpoint_select,obj_val = self.resetValues(model)
         order = [0,7,1,6,2,5,3,4]
-        obj_val,defocused_helio,flux,aimpoint_select = self.fluxSizeMethod(model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross)
+        obj_val,defocused_helio,flux,aimpoint_select = self.fluxSizeMethod(model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross,obj_val)
         print('method 2 obj val: ',obj_val,' method 2 defocused heliostats: ',len(defocused_helio))
         if obj_val > ub:
             ub = obj_val
@@ -420,5 +420,10 @@ class FluxStoreSize(Heuristic):
             chosen_defoc_helio = defocused_helio.copy()
             self.updateVals(model, aimpoint_select)
 
+        obj_val = ub
+        print('obj val before switching: ',obj_val)
+        mid_list,edge_list = self.createDataFrame(model,helio_list,aim_list,aimpoint_select)
+        flux,obj_val = self.switchEdgeMiddle(model,flux,helio_list,aimpoint_select,obj_val,edge_list,mid_list)
+        ub = obj_val
         t_end = time.time()
         return(ub,t_end-t_start,len(chosen_defoc_helio))
