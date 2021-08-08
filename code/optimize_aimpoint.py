@@ -100,6 +100,10 @@ class AimpointOptimizer(object):
         self.solver = params.get("solver")
         if self.solver is None:
             self.solver = "cbc"
+        # for if warmstart = 0, then will work with process dict values and return 0s for these
+        self.time_add = 0
+        self.obj_val_feas_add = 0
+        self.init_defocused = 0
 
     def generateMeasurementSubset(self):
         measurement_points = []
@@ -374,8 +378,8 @@ class AimpointOptimizer(object):
         """
         if warmstart: 
             import opt_heuristic
-            heuristic = opt_heuristic.CenterOut(3)
-            self.obj_val_feas_add, self.time_add = heuristic.getIFS(self.model)
+            heuristic = opt_heuristic.FluxStoreSize(10)
+            self.obj_val_feas_add, self.time_add, self.init_defocused = heuristic.getIFS(self.model)
         opt = pe.SolverFactory(self.solver)
         if self.solver == "cbc":
             opt.options["ratioGap"] = mipgap
@@ -390,6 +394,7 @@ class AimpointOptimizer(object):
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
+        #self.opt_results = opt.solve(self.model, logfile='pyomo_info.log',tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
         self.gap = self.opt_results.solution[0].gap
         self.model.solutions.load_from(self.opt_results)
         
@@ -449,7 +454,8 @@ class AimpointOptimizer(object):
              "aimpoints":self.model.aimpoints,
              "surface_area":self.model.surface_area,
              "obj_val_feas_add":self.obj_val_feas_add,
-             "time_add":self.time_add
+             "time_add":self.time_add,
+             "init_defocused":self.init_defocused
              }
         return d
 
