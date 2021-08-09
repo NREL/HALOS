@@ -53,7 +53,9 @@ class AimpointOptOutputs(object):
         self.flux_ham = d["flux_ham"]
         self.surface_area = d["surface_area"]
         self.aimpoints = d["aimpoints"]
-
+        self.obj_val_feas_add =  d["obj_val_feas_add"]
+        self.time_add = d["time_add"]
+        self.init_defocused = d["init_defocused"]
                     
     def processSubproblemOutputs(self, ds):
         """
@@ -76,6 +78,11 @@ class AimpointOptOutputs(object):
         self.flux_ham = {}
         self.surface_area = {}
         self.heliostats = []
+        self.obj_val_feas_add = 0
+        self.time_add = 0
+        self.init_defocused = 0
+        self.ub = []
+
 
         for d in ds:
             self.flux_map += d["flux_map"]
@@ -89,6 +96,17 @@ class AimpointOptOutputs(object):
                 self.measurement_points = d["measurement_pts"]
             self.flux_ham.update(d["flux_ham"])
             self.surface_area.update(d["surface_area"])
+            self.obj_val_feas_add += d["obj_val_feas_add"]
+            self.time_add += d["time_add"]
+            self.init_defocused += d["init_defocused"]
+
+        # make file with obj val and ubs per sxn, as well as overall obj val - for 8 sxns
+        sxn_file = open("section_file_highermipagain.csv","a+",newline="")
+        i = 1
+        for d in ds:
+            sxn_file.write('S'+str(i)+'_ub: '+str(d["upper_bound"])+"\n")
+            sxn_file.write('S'+str(i)+'_obj: '+str(d["obj_value"])+"\n")
+            i = i + 1
     
     def plotOutputs(self, case_name=""):
         """
@@ -206,7 +224,7 @@ class AimpointOptOutputs(object):
                     self.post_num_defocused -= 1
                     self.h_refocused.append(h)
                     self.a_refocused.append(a)
-                    # so heliostat refocuses only at the first aimpoint for which it can
+                    # so heliostat refocuses only at the first aimpoint for which it can  
                     break
 
     def newObj(self):
@@ -246,6 +264,8 @@ class AimpointOptOutputs(object):
         ofile.write("defocused heliostats: "+str(self.num_defocused_heliostats)+"\n\naimpoint summary:\n")
         if self.post_num_defocused != 0:
             ofile.write("post defocused heliostats: "+str(self.post_num_defocused)+"\n\naimpoint summary:\n")
+        ofile.write("Initial feasible objective: "+str(self.obj_val_feas_add))
+        ofile.write("Initial Heuristic Time: "+str(self.time_add))
         ofile.write("heliostat_id,aimpoint_id\n")
         for h in range(len(self.aimpoint_select_map)):
             ofile.write(str(h)+","+str(self.aimpoint_select_map[h])+"\n")
