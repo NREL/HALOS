@@ -1,0 +1,24 @@
+﻿length,21
+tow_height,195.07
+diameter,10.38
+height,30.48
+pts_per_dim,10.38
+zenith_deg,90
+azimuth_deg,180
+rec_cent_offset_x,0
+rec_cent_offset_y,0
+rec_cent_offset_z,0
+aim_rows,7
+aim_cols,7
+aim_h_margin,0
+aim_v_margin,0
+power_rating,1.10E+08
+receiver_type,External cylindrical
+field_dni,950
+flux_dni,950
+mirror_len,10
+mirror_ht,11.157
+mirror_area,115.7
+flux_ub,1000
+flux_lb,0
+n_circulation,5

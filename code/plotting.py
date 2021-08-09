@@ -9,7 +9,6 @@ import scipy
 import scipy.stats
 import numpy as np
 
-
 def get_grid_points(lb, ub, num_pts):
     return lb + (ub - lb) * (np.arange(num_pts, dtype=float)) / (num_pts - 1)
 
@@ -305,6 +304,32 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     y = outputs.flux_model.receiver.aim_z.flatten()
     colors = plt.scatter(x,y,s=6,c=range(1,outputs.flux_model.receiver.num_aimpoints+1),cmap='Set1')
     plt.savefig(fname, dpi= 2000)
+    plt.cla()
+    plt.clf()
+
+def plot_measurement_and_aimpoints(outputs,fname):
+    """
+    Plots graph overlapping measurement and aimpoints. 
+
+    Parameters
+    ----------
+    outputs : outputs : output - results - from the optimization model 
+    fname : Filename for saving plot
+    
+    """
+    # plot measurement points
+    z_plot = outputs.flux_model.receiver.z.flatten()
+    if outputs.flux_model.receiver.params["receiver_type"] == "Flat plate":
+        x_plot = outputs.flux_model.receiver.x.flatten()
+    elif outputs.flux_model.receiver.params["receiver_type"] == "External cylindrical":
+        x_plot  = -5*np.ones(len(z_plot))
+    plt.scatter(x_plot,z_plot,color='k',s=8)
+
+    # plot aim points on the same graph
+    x = outputs.flux_model.receiver.aim_x.flatten()
+    y = outputs.flux_model.receiver.aim_z.flatten()
+    plt.scatter(x,y,color='r',marker='x')
+    plt.savefig(fname, dpi = 2000)
     plt.cla()
     plt.clf()
 

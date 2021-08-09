@@ -106,11 +106,10 @@ class FluxModel(object):
             print("No fraction maps generation - Flat Plate")
             pass
 
-
     def addSettings(self,settings):
         self.settings = settings
-        
-        
+
+
     def HermiteConvolution(self, aim_loc, measure_loc):
         pass  # do the hermite evaluation
 
