@@ -100,7 +100,7 @@ class AimpointOptimizer(object):
         self.solver = params.get("solver")
         if self.solver is None:
             self.solver = "cbc"
-        # for if warmstart = 0, then will work with process dict values and return 0s for these
+        # if warmstart = False, return and print zeros for initial values listed
         self.time_add = 0
         self.obj_val_feas_add = 0
         self.init_defocused = 0
@@ -351,7 +351,7 @@ class AimpointOptimizer(object):
         self.genConstraintsBinOnly()
 
 
-    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=True):
+    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
         """
         Solves the optimization model 
 
@@ -394,7 +394,7 @@ class AimpointOptimizer(object):
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
-        #self.opt_results = opt.solve(self.model, logfile='pyomo_info.log',tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
+        #self.opt_results = opt.solve(self.model, logfile='pyomo_info.log',tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False) # to print pyomo log file
         self.gap = self.opt_results.solution[0].gap
         self.model.solutions.load_from(self.opt_results)
         

@@ -4,7 +4,6 @@ HALOS Aimpoint Optimization Model's Output Processing Module
 
 """
 import numpy
-import optimize_aimpoint
 
 class AimpointOptOutputs(object):
     def __init__(self, results, flux_model,post_refocus = True):
@@ -16,10 +15,10 @@ class AimpointOptOutputs(object):
             defocused heliostat to see whether it can point at an aimpoint without violating a flux limit.
             Set post_refocus to False in __init__ of AimpointOptOutputs in process_aimpoint_outputs
             to exclude this step.
-            Note: Not included as an input to solve_aim_model because of associated pyomo errors.
+            Note: Not included as an input to solve_aim_model because of associated pyomo errors when tried that.
         '''
         self.flux_model = flux_model
-        # so prints zeros in these places if post_refocus = False
+        # to print zeros for post_num_defocused and new_obj if post_refocus = False
         self.post_num_defocused = 0
         self.new_obj = 0
         if type(results) is list:
@@ -189,7 +188,6 @@ class AimpointOptOutputs(object):
             defoc_dict[h] = self.aimpoint_select_map[h]
             if defoc_dict[h] == 0:
                 defoc_list.append(h)
-        #print('defoc list from aimpt map: ',defoc_list)
         self.post_num_defocused = self.num_defocused_heliostats
         self.h_refocused = []
         self.a_refocused = []
