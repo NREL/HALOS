@@ -81,8 +81,6 @@ class AimpointOptOutputs(object):
         self.obj_val_feas_add = 0
         self.time_add = 0
         self.init_defocused = 0
-        self.ub = []
-
 
         for d in ds:
             self.flux_map += d["flux_map"]
@@ -99,14 +97,15 @@ class AimpointOptOutputs(object):
             self.obj_val_feas_add += d["obj_val_feas_add"]
             self.time_add += d["time_add"]
             self.init_defocused += d["init_defocused"]
-
-        # make file with obj val and ubs per sxn, as well as overall obj val - for 8 sxns
-        sxn_file = open("section_file_highermipagain.csv","a+",newline="")
+        '''
+        # print obj val and ub for each section to a file -- useful for considering solutions obtained from time outs
+        sxn_file = open("section_file.csv","a+",newline="")
         i = 1
         for d in ds:
             sxn_file.write('S'+str(i)+'_ub: '+str(d["upper_bound"])+"\n")
             sxn_file.write('S'+str(i)+'_obj: '+str(d["obj_value"])+"\n")
             i = i + 1
+        '''
     
     def plotOutputs(self, case_name=""):
         """
