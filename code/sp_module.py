@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from copylot import CoPylot
 import numpy
 import pandas
-import flux_model
 
 cp = CoPylot()
 
