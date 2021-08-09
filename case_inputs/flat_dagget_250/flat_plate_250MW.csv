@@ -7,8 +7,8 @@ azimuth_deg,180
 rec_cent_offset_x,0
 rec_cent_offset_y,0
 rec_cent_offset_z,0
-aim_rows,10
-aim_cols,10
+aim_rows,7
+aim_cols,7
 aim_h_margin,0
 aim_v_margin,0
 power_rating,2.50E+08
