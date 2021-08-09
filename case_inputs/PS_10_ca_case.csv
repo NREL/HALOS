@@ -1,5 +1,0 @@
-﻿field_filename,./../sample_fields/PS-10.csv
-receiver_filename,./../case_inputs/PS_10/extcyl_PS-10.csv
-mirror_filename,./../case_inputs/sp_gaussian_mirror.csv
-settings,./../case_inputs/PS_10/case_settings.csv
-weather_filename,./../weather_files/Spain ESP Sevilla (INTL).csv

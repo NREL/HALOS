@@ -14,7 +14,7 @@ aim_h_margin,0
 aim_v_margin,0
 power_rating,5.00E+07
 receiver_type,Flat plate
-field_dni,750
+field_dni,950
 flux_dni,950
 mirror_len,12.2
 mirror_ht,12.2

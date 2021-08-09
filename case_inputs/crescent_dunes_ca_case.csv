@@ -1,5 +1,0 @@
-﻿field_filename,./../sample_fields/crescent-dunes.csv
-receiver_filename,./../case_inputs/crescent_dunes/extcyl_crescentdunes.csv
-mirror_filename,./../case_inputs/sp_gaussian_mirror.csv
-settings,./../case_inputs/crescent_dunes/case_settings.csv
-weather_filename,./../weather_files/USA NV Tonopah Airport (TMY3).csv
