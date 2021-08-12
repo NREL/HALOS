@@ -3,11 +3,11 @@
 Geometry Module
 Builds different receiver modules with x, y, z coordinates
 """
+import math
+import csv
 
 import numpy as np
 import scipy
-import math
-import csv
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import pandas

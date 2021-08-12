@@ -8,12 +8,16 @@ optimization model or can independently run several solarpilot cases using the
 co-pylot API.  
 
 """
-import os, csv
-import matplotlib.pyplot as plt
-from copylot import CoPylot
+
+import os
+import csv
+
 import numpy
 import pandas
+import matplotlib.pyplot as plt
+
 import flux_model
+from copylot import CoPylot
 
 cp = CoPylot()
 

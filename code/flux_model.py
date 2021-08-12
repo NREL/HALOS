@@ -6,9 +6,11 @@ Framework for building out models for flux modeling and outputting images
 to either a data file or an optimization model.
 """
 import csv
-import numpy
-import sol_pos
+
 import matplotlib.pyplot as plt
+import numpy
+
+import sol_pos
 import sp_module
 
 def ReadWeatherFile(weather_file, get_angles=False):
@@ -106,11 +108,10 @@ class FluxModel(object):
             print("No fraction maps generation - Flat Plate")
             pass
 
-
     def addSettings(self,settings):
         self.settings = settings
-        
-        
+
+
     def HermiteConvolution(self, aim_loc, measure_loc):
         pass  # do the hermite evaluation
 
