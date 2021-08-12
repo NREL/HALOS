@@ -6,12 +6,12 @@ Solar Position - Azimuth and Zenith
 
 """
 
-
-
 import csv
-import pysolar.solar 
 import datetime
+
 import numpy
+
+import pysolar.solar 
 
 """
 The script reads the weather file and returns Solar Azimuth angle, Solar Zenith Angle for a complete year.

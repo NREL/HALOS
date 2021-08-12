@@ -8,12 +8,11 @@ This module calculates a Hermite expansion
 """
 
 import Toolbox as tb
-
 import math
+
 import numpy as np
 import scipy
 import scipy.stats
-
 
 
 class Flux(object):

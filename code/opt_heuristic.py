@@ -3,18 +3,14 @@
 This module includes heuristics that can generate an initial feasible solution
 to the aimpoint strategy optimization model.
 """
-
-import WELL512
-
-import numpy
-
 import math
-
 import time
-
 import random
 
+import numpy
 import pandas as pd
+
+import WELL512
 
 class Heuristic(object):
     """generates an initial feasible solution to an existing aimpoint strategy
@@ -29,6 +25,17 @@ class Heuristic(object):
         raise ValueError("Inherited classes must overwrite 'getIFS'")
         
     def updateVals(self, model, aimpoint_select):
+        '''
+        Updates select_aimpoint with the initial heliostat-aimpoint pairings. 
+        Updates defocus with the heliostats that did not successfully focus.
+
+        Parameters
+        ------------
+        model -- pyomo model that is defined in optimize_aimpoint.AimpointOptimizer
+        (attributes include measurement_points, aimpoints, heliostats, and flux)
+        aimpoint_select -- list (with length of the number of heliostats) for which
+        each element is the corresponding heliostat's selected aimpoint
+        '''
         helio_list = list(model.heliostats)
         for h in range(len(helio_list)):
             if aimpoint_select[h] > 0:
@@ -37,7 +44,23 @@ class Heuristic(object):
                 #defocus heliostat
                 model.defocus[helio_list[h]] = 1
         
-    def attemptToAim(self, model, flux, a, h,obj_val):
+    def attemptToAim(self, model, flux, a, h, obj_val):
+        '''
+        Tries to aim heliostat h at aimpoint h. Adds flux and updates objective value
+        if successfully aims without flux violations. 
+
+        Parameters
+        ------------
+        flux -- numpy array with flux value at each measurement point for initial solution
+        a -- aimpoint at which heliostat h is attempting to aim
+        h -- heliostat that is attempting to aim
+        obj_val -- existing power delivered by the solution (before h-a pairing attempted)
+
+        Returns
+        ------------
+        If True (successfully aims): New flux and objective value and aimpoint a
+        If False (violates flux): Flux and objective value prior to attempting to aim h at a.
+        '''
         added_flux = numpy.array([model.flux[h,m,a] for m in model.measurement_points])
         if any(flux+added_flux > model.flux_ubs):
             return flux,obj_val, -1, False
@@ -47,6 +70,16 @@ class Heuristic(object):
             return flux+added_flux, obj_val, a, True
 
     def removeFlux(self,model,flux,a,h,obj_val):
+        '''
+        Removes flux contributed by heliostat h aiming at aimpoint a.
+        Updates objective value accordingly.
+        Used for post-processing -- switching pairings around after they are initially selected.
+
+        Returns
+        ------------
+        Flux and objective value after h-a pairing contributions have been removed.
+        '''
+
         removed_flux = numpy.array([model.flux[h,m,a] for m in model.measurement_points])
         flux -= removed_flux
         for m in model.measurement_points:
@@ -54,6 +87,23 @@ class Heuristic(object):
         return flux,obj_val
 
     def randomSwitchPairs(self,model,flux,helio_list,aimpoint_select,obj_val):
+        ''''
+        After initial solution is created, randomly selects heliostats and switches
+        their aimpoints if doing so results in a higher objective value and does 
+        not violate flux limits.
+
+        Parameters
+        ----------
+        helio_list -- list of heliostats, extracted from model
+        aim_list -- list of aimpoints, extracted from model
+        aimpoint_select -- list (with length of the number of heliostats) for which
+        each element is the corresponding heliostat's selected aimpoint
+
+        Returns
+        --------
+        New flux and objective value after switch if successful, or existing flux and
+        objective value if switch is unsuccessful.
+        '''
         for i in range(50):
             # reset flux and obj val to these values if new aiming strategy doesn't help
             saved_flux = flux
@@ -90,8 +140,20 @@ class Heuristic(object):
         return flux,obj_val
 
     def createDataFrame(self,model,helio_list,aim_list,aimpoint_select):
-        # creates dataframe with columns of heliostats, aimpoints, and number of zeros in flux image
-        # returns desired lists of heliostats from these dataframes
+        '''
+        Creates dataframe with columns of heliostats, aimpoints, and number 
+        of zeros in flux image. Then creates dataframes according to the aimpoints
+        at which the heliostats aim and sorts these dataframes according to the 
+        number of zeros in the heliostats' flux images. For use in post-processing
+        switching aimpoints.
+
+        Returns
+        ----------
+        mid_list -- list of heliostats originally pointed at middle aimpoints in order
+        of increasing flux size
+        edge_list -- list of heliostats originally pointed at edge aimpoints in order
+        of decreasing flux size
+        '''
         num_zeross = []
         a_cent = math.ceil(len(aim_list) / 2)
         for h in range(len(helio_list)):
@@ -115,6 +177,24 @@ class Heuristic(object):
         return mid_list,edge_list
 
     def switchEdgeMiddle(self,model,flux,helio_list,aimpoint_select,obj_val,edge_list,middle_list):
+        '''
+        Switches heliostat-aimpoint pairings around if doing so adheres to flux limits 
+        and increases the objective value. Prioritizes switching center-aiming heliostats
+        with small flux sizes with edge-aiming heliostats with large flux sizes.
+
+        Parameters
+        ----------
+        middle_list -- list of heliostats originally pointed at middle aimpoints in order
+        of increasing flux size (output of createDataFrame)
+        edge_list -- list of heliostats originally pointed at edge aimpoints in order
+        of decreasing flux size (output of createDataFrame)
+
+        Returns
+        --------
+        New flux and objective value after switch if successful, or existing flux and
+        objective value if switch is unsuccessful.
+        '''
+
         for h in edge_list:
             saved_flux = flux
             saved_obj = obj_val
@@ -250,7 +330,8 @@ class FluxStoreSize(Heuristic):
         self.gen = WELL512.WELL512("rngstates.csv")
 
     def resetValues(self,model):
-        # to reset values before a new method is used to generate new feasible h-a pairings
+        """ Reset values before a new method is used to generate new feasible h-a pairings, 
+        returns the reset values which are then used in the method."""
         flux = numpy.zeros(len(model.measurement_points), dtype=float)
         defocused_helio = []
         helio_list = list(model.heliostats)
@@ -259,6 +340,17 @@ class FluxStoreSize(Heuristic):
         return flux,defocused_helio,helio_list,aimpoint_select,obj_val
 
     def calculateFluxSizes(self,model,a_cent):
+        '''
+        Makes list containing the number of zeros in the flux image of each heliostat on the 
+        center aimpoint a_cent. 
+
+        Returns
+        -------
+        num_zeross -- list (length of the number of heliostats) for which each element is the
+        number of zeros in the corresponding heliostat's flux image
+        standard_deviation -- standard deviation of num_zeross
+        avg_nz -- average of num_zeross (average number of nonzeros in a heliostat's flux image)
+        '''
         # makes list num_zeross for which each element is the number of zeros in the flux 
         # image of the corresponding heliostat when it is aimed at the center aimpoint
         # calculates std and avg of list
@@ -273,6 +365,15 @@ class FluxStoreSize(Heuristic):
         return num_zeross,standard_deviation,avg_nz
     
     def getUpdatedAimlist(self,model,a_cent):
+        '''
+        Updates aim list to have a length of 8 by adding elements or cutting out elements,
+        prioritizing center aimpoints if needed. This is to make the aim list suitable
+        for the groups used in FluxSizeMethod.
+
+        Returns
+        -------
+        Updated aim list.
+        '''
         # changes aim_list to a list of length 8 by copying elements, starting from center mostly
         # or by deleting elements if list is longer than num_sxns 8
         aim_list = list(model.aimpoints)
@@ -321,8 +422,15 @@ class FluxStoreSize(Heuristic):
         return aim_list
     
     def fluxSizeMethod(self,model,order,flux,defocused_helio,helio_list,aimpoint_select,aim_list,avg_nz,standard_deviation,num_zeross,obj_val):
-        # creates 8 similarly sized/distributed groups of heliostats based on flux size
-        # its group determines the aimpoint the heliostat attempts on first try (larger flux size --> closer to center)
+        '''
+        Creates 8 similarly sized/distributed groups of heliostats based on flux size.
+        A heliostat's group heavily determines the aimpoint the heliostat attempts on its first try.
+        Heliostats with larger flux sizes aim closer to the center.
+
+        Returns
+        --------
+        Objective value, list of defocused heliostats, flux, and aimpoint_select that results from method.
+        '''
         for h in range(len(helio_list)):
             for n in range(self.num_tries):
                 list_to_change = aim_list.copy()
@@ -390,11 +498,8 @@ class FluxStoreSize(Heuristic):
         print('method 2 obj val: ',obj_val,' method 2 defocused heliostats: ',len(defocused_helio))
         if obj_val > ub:
             ub = obj_val
-            print('2nd solution higher than 1st')
             self.updateVals(model, aimpoint_select)
             chosen_defoc_helio = defocused_helio.copy()
-        else:
-            print('1st solution higher than 2nd')
 
         # method 3 - now randomly assigning -- most helpful if had some defocused heliostats using the previous method
         # some emphasis on center for first try - 50% chance or more it's chosen
@@ -416,7 +521,6 @@ class FluxStoreSize(Heuristic):
         print('method 3 obj val: ',obj_val,' method 3 defocused heliostats: ',len(defocused_helio))
         if obj_val > ub:
             ub = obj_val
-            print('3rd solution highest')
             chosen_defoc_helio = defocused_helio.copy()
             self.updateVals(model, aimpoint_select)
 

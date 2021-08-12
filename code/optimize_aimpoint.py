@@ -7,10 +7,11 @@ Pyomo modeling language.
 
 """
 
+import numpy
 import pyomo
 import pyomo.environ as pe
+
 import sol_pos
-import numpy
 
 ### Methods or objective and constraint rules
 EPSILON = 1e-8
@@ -394,7 +395,6 @@ class AimpointOptimizer(object):
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
-        #self.opt_results = opt.solve(self.model, logfile='pyomo_info.log',tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False) # to print pyomo log file
         self.gap = self.opt_results.solution[0].gap
         self.model.solutions.load_from(self.opt_results)
         

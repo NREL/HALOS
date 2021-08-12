@@ -6,9 +6,11 @@ Framework for building out models for flux modeling and outputting images
 to either a data file or an optimization model.
 """
 import csv
-import numpy
-import sol_pos
+
 import matplotlib.pyplot as plt
+import numpy
+
+import sol_pos
 import sp_module
 
 def ReadWeatherFile(weather_file, get_angles=False):

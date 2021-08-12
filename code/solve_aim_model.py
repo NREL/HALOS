@@ -3,10 +3,12 @@
 Module that solves the aimpoint optimization model, whether by decomposition 
 or directly.
 """
+
+import time
+
 import inputs
 import optimize_aimpoint
 import process_aimpoint_outputs
-import time
 
 def solveModelDirectly(case_name, case_filename):
     """

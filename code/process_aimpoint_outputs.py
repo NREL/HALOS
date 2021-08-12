@@ -172,6 +172,11 @@ class AimpointOptOutputs(object):
         """
         removes heliostats from aimpoint strategy optimization model until
         flux is feasible.
+
+        Parameters
+        ==========
+        threshold -- value that the flux violation at all measurement points must 
+        be below for no flux limits to be considered violated
         """
         self.getFluxViolation()
         while self.flux_violation.max() > threshold:
@@ -196,6 +201,10 @@ class AimpointOptOutputs(object):
         if for one of them the additional flux added to each of the measurement points does not 
         violate any flux limit. Each heliostat refocuses on the first aimpoint for which it 
         can focus without violating flux limits.
+
+        Updates flux map and number of defocused heliostats.
+        Creates list containing heliostats that refocused and another list with their corresponding aimpoints.
+
         '''
         
         # obtain list of heliostat ids that are defocused
@@ -228,7 +237,8 @@ class AimpointOptOutputs(object):
 
     def newObj(self):
         '''
-        Adds contributions of any refocused heliostats to the previously calculated obj val
+        Adds contributions of any refocused heliostats to the previously calculated obj val.
+        Uses lists of refocused heliostats and aimpoints created in refocusHeliostats.
         '''
         post_add_obj = 0
         for i in range(len(self.h_refocused)):

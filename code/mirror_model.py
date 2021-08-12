@@ -6,9 +6,6 @@ Mirror and slope error model
 import scipy.stats
 import numpy
 
-
-# import math
-
 class Mirror(object):
     def __init__(self,locs,shape,error,error_type):
         self.mirror_locs = locs   #3-column array(float): x, y, z coordinates for each mirror in field

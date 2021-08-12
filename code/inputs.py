@@ -3,6 +3,9 @@
 Module that reads in input from files, to be used for input to the 
 flux and optimization models.
 """
+import csv
+
+import numpy
 
 import flux_model
 import flux_method
@@ -10,8 +13,6 @@ import sun_shape
 import geometry
 import mirror_model
 import field
-import csv
-import numpy
 
 def readCaseFile(master_filename):
     """
