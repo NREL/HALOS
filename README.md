@@ -1,7 +1,7 @@
 # HALOS - Heliostat Aimpoint and Layout Optimization Software 
 
 ## About
-This project develops a software decision tool that uses innovative optimization methods to determine the optimal aimpoint strategy and solar field layout of a concentrating solar power (CSP) central receiver plant. The software development is carried out at [National Renewable Energy Laboratory (NREL)](https://www.nrel.gov/) and is funded by the U.S. Department of Energy under the award number DE-EE00035930. 
+This project develops a software decision tool that uses innovative optimization methods to determine the optimal aimpoint strategy and solar field layout of a concentrating solar power (CSP) central receiver plant. The software development is carried out at [National Renewable Energy Laboratory (NREL)](https://www.nrel.gov/) and was previously funded by the U.S. Department of Energy under the award number DE-EE00035930. 
 
 <!---## Access
 Access to the repository is currently limited to project development team and to gain access contact [Alex Zolan](mailto://alexander.zolan@nrel.gov). --->
