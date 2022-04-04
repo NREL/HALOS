@@ -1,7 +1,11 @@
 # HALOS - Heliostat Aimpoint and Layout Optimization Software 
 
-## About
-This project develops a software decision tool that uses innovative optimization methods to determine the optimal aimpoint strategy and solar field layout of a concentrating solar power (CSP) central receiver plant. The software development is carried out at [National Renewable Energy Laboratory (NREL)](https://www.nrel.gov/) and was previously funded by the U.S. Department of Energy under the award number DE-EE00035930. 
+## Introduction
+HALOS is an open-source software decision tool implemented in Python that uses mixed-integer programming models to determine the best aimpoint strategy for the solar collection field of a concentrating solar power (CSP) central receiver plant. Design and operations decisions addressed by this tool include: (i) the location of each heliostat in the solar field, and (ii) the intended aimpoint of each heliostat to the receiver for each hour, across a representative collection of days. Given weather and location data, heliostat specifications, a solar field layout, and a receiver’s size, location, and geometry as input, HALOS outputs an aiming strategy that maximizes thermal power delivery to the receiver while ensuring that the thermal flux profile of the receiver falls within design specifications.  A key feature of the tool includes a method to subdivide the solar field into subfields, for which the aiming strategy can be optimized separately and in parallel.  This allows for aiming strategies to be obtainable using integer programming methods for commercial-scale plants within a matter of minutes.
+
+The tool includes a module that directly interfaces with SolarPILOT, an NREL-developed solar field performance characterization tool, to obtain high-fidelity flux maps and solar field layouts.  HALOS also accepts flux images in flat-file format.
+
+The software development is carried out at [National Renewable Energy Laboratory (NREL)](https://www.nrel.gov/) and was previously funded by the U.S. Department of Energy under the award number DE-EE00035930. 
 
 <!---## Access
 Access to the repository is currently limited to project development team and to gain access contact [Alex Zolan](mailto://alexander.zolan@nrel.gov). --->
