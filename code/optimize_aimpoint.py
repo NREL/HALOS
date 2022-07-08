@@ -15,15 +15,25 @@ import sol_pos
 
 ### Methods or objective and constraint rules
 EPSILON = 1e-8
+# def objectiveRule(model):
+#         return sum(  #m 
+#                     sum( #h
+#                         sum(#a
+#                             model.obj_by_point[m] * model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
+#                             for a in model.aimpoints
+#                         ) for h in model.heliostats
+#                     ) for m in model.measurement_points
+#                 )
+
 def objectiveRule(model):
         return sum(  #m 
-                    sum( #h
-                        sum(#a
-                            model.obj_by_point[m] * model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
-                            for a in model.aimpoints
-                        ) for h in model.heliostats
-                    ) for m in model.measurement_points
+                    model.obj_by_point[m] * model.surface_area[m]* model.incident_flux[m]
+                    for m in model.measurement_points
                 )
+
+
+def fluxCalcRule(model, m):
+    return model.incident_flux[m] == sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats)
 
 
 def aimSelectRule(model,h):
@@ -46,23 +56,31 @@ def fluxUBRule(model,m):
         return pe.Constraint.Feasible
     if sum(sum(model.flux[h,m,a] for a in model.aimpoints) for h in model.heliostats) < EPSILON:
         return pe.Constraint.Feasible
-    return sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) <= model.flux_ubs[m]
+    return model.incident_flux[m] <= model.flux_ubs[m]
+    # return sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) <= model.flux_ubs[m]
+
+
+# def fluxDiffRule(model,m,mp):
+#     if m not in model.neighboring_points[mp]:
+#         return pe.Constraint.Feasible
+#     return (
+#             sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) -
+#             sum(sum(model.flux[h,mp,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) 
+#             <= model.flux_diff
+#             )
 
 
 def fluxDiffRule(model,m,mp):
     if m not in model.neighboring_points[mp]:
         return pe.Constraint.Feasible
-    return (
-            sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) -
-            sum(sum(model.flux[h,mp,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) 
-            <= model.flux_diff
-            )
+    return (model.incident_flux[m] - model.incident_flux[mp] <= model.flux_diff)
 
 
 def orderedDefocusingRule(model, h, hp):
     if model.order[h]+1 == model.order[hp]:
         return model.defocus[h] >= model.defocus[hp]
     return pe.Constraint.Feasible
+
 
 def groupingRule(model, h, hp, a):
     if h < hp and model.group_assignment[h] == model.group_assignment[hp]:
