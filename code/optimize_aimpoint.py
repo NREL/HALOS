@@ -123,7 +123,7 @@ class AimpointOptimizer(object):
         first_col = col_spacing // 2
         for r in range(aim_rows):
             for c in range(aim_cols):
-                pt = (first_row + (r*row_spacing)) * m_rows + (first_col + (c*col_spacing)) + 1
+                pt = (first_row + (r*row_spacing)) * m_cols + (first_col + (c*col_spacing)) + 1
                 measurement_points.append(pt)
         self.model.check_measurement_points = pe.Set(initialize = measurement_points)
 
