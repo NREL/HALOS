@@ -345,7 +345,7 @@ class AimpointOptimizer(object):
         if self.params["ordered_defocus"]:
             self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats, rule=orderedDefocusingRule)
         if self.flux_model.settings["heliostat_group_size"] > 1: 
-            self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
+            self.model.group_decisions_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
             print("group cons made")
 
     def createFullProblem(self):
