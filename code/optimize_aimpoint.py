@@ -69,6 +69,17 @@ def groupingRule(model, h, hp, a):
         return model.select_aimpoint[h,a] == model.select_aimpoint[hp,a]
     return pe.Constraint.Feasible
 
+
+def columnDifferenceRule(model, c, cp):
+    if c != cp:
+        return (
+            sum(model.incident_flux[m] for m in model.measurement_points_in_column[c]) 
+            >= sum(model.min_fraction * model.incident_flux[m] for m in model.measurement_points_in_column[cp]) 
+        )
+    return pe.Constraint.Feasible
+    
+
+
 def neighborRule(model, m):
     """
     determines neighboring measurement points.  in this case, we assume that the neighbors are all vertical.
@@ -276,6 +287,7 @@ class AimpointOptimizer(object):
             self.model.flux_diff = pe.Param(mutable=True, initialize = self.flux_model.receiver.params["gradient_limit"]/self.params["num_sections"])
         self.model.surface_area = pe.Param(self.model.measurement_points, initialize = surface_area)
         self.model.obj_by_point = pe.Param(self.model.measurement_points, initialize = obj_by_point)
+        self.model.min_fraction = pe.Param(initialize=self.flux_model.receiver.params["min_col_fraction"])
         if self.params["ordered_defocus"]:
             self.getHeliostatOrdering(self.params["order_method"])
         self.model.flux_constraint_limit = self.params["flux_constraint_limit"]
@@ -303,6 +315,7 @@ class AimpointOptimizer(object):
     def generateVariables(self):
         self.model.select_aimpoint = pe.Var(self.model.heliostats * self.model.aimpoints, domain=pe.Binary)
         self.model.defocus = pe.Var(self.model.heliostats, domain=pe.NonNegativeReals, bounds=(0,1))
+        self.model.incident_flux = pe.Var(self.model.measurement_points, domain=pe.NonNegativeReals)
 
     def getHeliostatOrdering(self, method="eff"):
         """
@@ -347,6 +360,10 @@ class AimpointOptimizer(object):
         if self.flux_model.settings["heliostat_group_size"] > 1: 
             self.model.group_decisions_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
             print("group cons made")
+        if self.model.min_fraction > EPSILON:
+            self.model.flux_calc_con = pe.Constraint(self.model.measurement_points, rule=fluxCalcRule)
+            self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
+
 
     def createFullProblem(self):
         """
