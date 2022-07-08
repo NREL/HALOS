@@ -130,14 +130,14 @@ class SolarPilot:
         plt.scatter(x, y, s=1.5)
         plt.tight_layout()
         if name is not None:
-            plt.savefig(name) 
+            plt.savefig("./../outputs/"+name) 
         
     def plot_flux_map(self, flux, name = None):
         im = plt.imshow(flux)
         plt.colorbar(im)
         plt.tight_layout()
         if name is not None:
-            plt.savefig(name)
+            plt.savefig("./../outputs/"+name)
         
 class SP_Field(SolarPilot):
     def __init__(self, filenames):

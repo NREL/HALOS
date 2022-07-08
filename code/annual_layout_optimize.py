@@ -56,10 +56,10 @@ def getAnnualSummary(case_name,case_filename):
     
 def getAnnualSPSummary(sp_case_name,case_filename):
     hour_ids = getHourIDs(case_filename)
-    ofile = open("sp_"+sp_case_name+"_summary.csv",'w')
+    ofile = open("./../outputs/sp_"+sp_case_name+"_summary.csv",'w')
     first = True
     for hour in hour_ids:
-        f = open(sp_case_name+str(hour)+"_summary.csv",'r')
+        f = open("./../outputs/"+sp_case_name+str(hour)+"_summary.csv",'r')
         l = f.readlines()
         if first:
             ofile.write(l[0])

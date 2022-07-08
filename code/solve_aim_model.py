@@ -164,7 +164,7 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
     if print_outputs:
         results.printOutput(case_name)
     rw = 'a' if append else 'w'
-    ofile = open(main_case_name+"_summary.csv",rw)
+    ofile = open("./../outputs/"+main_case_name+"_summary.csv",rw)
     if not append:
         #ofile.write("case_name,obj_value,num_defocused_heliostats,solve_time,init_feas_obj,init_feas_time,post_obj,post_num_defoc\n") # if want to record all initial and post-refocusing values (obj val, time, number defocused)
         ofile.write("case_name,obj_value,num_defocused_heliostats,solve_time,post_obj\n")
@@ -210,7 +210,7 @@ def runSPHourlyCase(main_case_name,case_name, case_filename, hour_id = None, app
     outputs = sp_flux.run_sp_case(case_name = case_name, sp_aimpoint_heur = sp_aimpoint_heur, 
                                   saveCSV = True, hour_id = hour_id, weather_data = weather_data)
     rw = 'a' if append else 'w'
-    ofile = open("SolarPilot_" + main_case_name +"_summary.csv",rw)
+    ofile = open("./../outputs/SolarPilot_" + main_case_name +"_summary.csv",rw)
     if sp_aimpoint_heur:
         if not append:
             ofile.write("case_name,obj_value,num_defocus,max_flux,obj_pre_heur,obj_post_heur,post_num_defocused\n")
