@@ -78,6 +78,12 @@ def neighborRule(model, m):
     if m-model.num_cols <= 0:
         yield m-model.num_cols
 
+
+def columnInitRule(model, c):
+    for i in range(model.num_rows):
+        yield c+(i*model.num_cols)
+
+
 class AimpointOptimizer(object):
     def __init__(self, flux_model, params={"section_id":1,"num_sections":1,
                                            "aimpoint_cons_only":False,
@@ -128,6 +134,11 @@ class AimpointOptimizer(object):
         self.model.check_measurement_points = pe.Set(initialize = measurement_points)
 
 
+    def generateColumnsSubset(self):
+        self.model.columns = pe.Set(initialize=range(1,self.flux_model.receiver.params["pts_per_len_dim"]+1))
+        self.model.measurement_points_in_column = pe.Set(self.model.columns, initialize=columnInitRule)
+
+
     def generateSets(self):
         """
         Generate sets for the pyomomodel object.
@@ -140,6 +151,7 @@ class AimpointOptimizer(object):
                 )  #M
         
         self.generateMeasurementSubset()
+        self.generateColumnsSubset()
 
         if self.flux_model.receiver.params["use_flux_gradient"] == 1:
             self.model.neighboring_points = pe.Set(self.model.measurement_points, initialize=neighborRule)
