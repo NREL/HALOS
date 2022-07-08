@@ -135,7 +135,7 @@ class AimpointOptimizer(object):
         self.params["flux_constraint_limit"] = 500 /params["num_sections"]
         self.solver = params.get("solver")
         if self.solver is None:
-            self.solver = "cbc"
+            self.solver = "cplex"
         # if warmstart = False, return and print zeros for initial values listed
         self.time_add = 0
         self.obj_val_feas_add = 0
@@ -399,7 +399,7 @@ class AimpointOptimizer(object):
         self.genConstraintsBinOnly()
 
 
-    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
+    def optimize(self, mipgap=0.005, timelimit=300, tee=False, keepfiles=False, warmstart=False):
         """
         Solves the optimization model 
 

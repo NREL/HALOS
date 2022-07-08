@@ -1,0 +1,26 @@
+length,10
+tow_height,106.5
+height,8
+diameter,10
+pts_per_len_dim,20
+pts_per_ht_dim,16
+zenith_deg,90
+azimuth_deg,180
+rec_cent_offset_x,0
+rec_cent_offset_y,0
+rec_cent_offset_z,0
+aim_rows,4
+aim_cols,10
+aim_h_margin,0
+aim_v_margin,0
+power_rating,5.00E+07
+receiver_type,Flat plate
+field_dni,950
+flux_dni,950
+mirror_len,8
+mirror_ht,4
+mirror_area,32
+flux_ub,1000
+flux_lb,0
+n_circulation,0
+min_col_fraction,0.8

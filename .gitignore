@@ -1,0 +1,7 @@
+
+*.pyc
+*.pyc
+code/__pycache__/flux_model.cpython-38.pyc
+code/__pycache__/inputs.cpython-38.pyc
+code/__pycache__/solve_aim_model.cpython-38.pyc
+code/__pycache__/sp_aimpoint_heuristic.cpython-38.pyc

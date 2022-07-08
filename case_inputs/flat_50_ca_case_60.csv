@@ -1,0 +1,4 @@
+receiver_filename,./../case_inputs/flat_dagget_50/flat_plate_50MW_60.csv
+mirror_filename,./../case_inputs/sp_gaussian_mirror.csv
+settings,./../case_inputs/flat_dagget_50/case_settings.csv
+weather_filename,./../weather_files/USA NV Tonopah Airport (TMY3).csv
