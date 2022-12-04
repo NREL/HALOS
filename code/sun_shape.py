@@ -9,7 +9,6 @@ related error models.
 import scipy.stats
 import numpy
 
-
 class Sunshape(object):
     def __init__(self, model_type, model_params):
         self.type = model_type

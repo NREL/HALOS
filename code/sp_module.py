@@ -8,11 +8,16 @@ optimization model or can independently run several solarpilot cases using the
 co-pylot API.  
 
 """
-import os, csv
-import matplotlib.pyplot as plt
-from copylot import CoPylot
+
+import os
+import csv
+
 import numpy
 import pandas
+import matplotlib.pyplot as plt
+
+import flux_model
+from copylot import CoPylot
 
 cp = CoPylot()
 
@@ -38,7 +43,7 @@ class SolarPilot:
                self.receiver_data[line[0]] = line[1]
                
     def assign_inputs(self, weather_data = None, hour_id = None, dni = None, 
-                      not_filter_helio = False, center_aimpoint = True):
+                      not_filter_helio = False, center_aimpoint = True, read_weather = False):
         """
         Creates solarpilot data pointer and assigns the inputs through data pointer 
 
@@ -60,6 +65,8 @@ class SolarPilot:
         center_aimpoint : 
             DESCRIPTION. The default is True.
             Aimpoint Method 
+        read_weather : 
+            DESCRIPTION. Default is false for running HALOS optimization. If true: read weather file, for running SP optimization.
 
         Returns
         -------
@@ -96,9 +103,15 @@ class SolarPilot:
             cp.data_set_number(self.r, "fluxsim.0.flux_dni", dni)
         elif self.receiver_data.get('flux_dni') is not None: 
             cp.data_set_number(self.r, "fluxsim.0.flux_dni", float(self.receiver_data["flux_dni"]))
-        cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))   
-        cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))  
+        try:
+            cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_len_dim"]))
+            cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_ht_dim"]))
+        except KeyError:
+            cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))
+            cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))
         if hour_id is not None:
+            if read_weather == True:
+                weather_data = flux_model.ReadWeatherFile(weather_data)
             cp.data_set_number(self.r, "fluxsim.0.flux_day", weather_data['day'][hour_id])
             cp.data_set_number(self.r, "fluxsim.0.flux_hour", weather_data['hour'][hour_id])
             cp.data_set_number(self.r, "fluxsim.0.flux_month", weather_data['month'][hour_id])
@@ -117,14 +130,14 @@ class SolarPilot:
         plt.scatter(x, y, s=1.5)
         plt.tight_layout()
         if name is not None:
-            plt.savefig(name) 
+            plt.savefig("./../outputs/"+name) 
         
     def plot_flux_map(self, flux, name = None):
         im = plt.imshow(flux)
         plt.colorbar(im)
         plt.tight_layout()
         if name is not None:
-            plt.savefig(name)
+            plt.savefig("./../outputs/"+name)
         
 class SP_Field(SolarPilot):
     def __init__(self, filenames):
@@ -193,11 +206,11 @@ class SP_Field(SolarPilot):
             power_sum.append(sum_h)  
         print("results aggregated")
         #send to new dataframe
-        annual_results = pandas.DataFrame(columns = ["id","x_location","y_location","z_location","annual_power"])
+        annual_results = pandas.DataFrame(columns = ["id","X-pos","Y-pos","Z-pos","annual_power"])
         annual_results["id"] = field["id"]
-        annual_results["x_location"] = field["x_location"]
-        annual_results["y_location"] = field["y_location"]
-        annual_results["z_location"] = field["z_location"]
+        annual_results["X-pos"] = field["x_location"]
+        annual_results["Y-pos"] = field["y_location"]
+        annual_results["Z-pos"] = field["z_location"]
         annual_results["annual_power"] = power_sum
         annual_results.set_index("id")
         #get used field, add indicator to what's in the actual field
@@ -302,7 +315,7 @@ class SP_Flux(SolarPilot):
         flux_dict : Dictionary 
 
         """
-        self.assign_inputs(weather_data, hour_id, dni)
+        self.assign_inputs(weather_data, hour_id, dni, read_weather=True)
         cp.data_set_string(self.r, "fluxsim.0.aim_method", aim_method)
         cp.data_set_string(self.r, "solarfield.0.des_sim_detail", "Do not filter heliostats")
         cp.assign_layout(self.r, self.helio_data)
@@ -350,7 +363,7 @@ class SP_Flux(SolarPilot):
             Total number Heliostats in the field
 
         """
-        self.assign_inputs(weather_data, hour_id, dni, not_filter_helio, center_aimpoint)
+        self.assign_inputs(weather_data, hour_id, dni, not_filter_helio, center_aimpoint, read_weather=True)
         cp.assign_layout(self.r, self.helio_data)
         cp.simulate(self.r, nthreads = 8)                                                             
         flux = cp.get_fluxmap(self.r)                                                

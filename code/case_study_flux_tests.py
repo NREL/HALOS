@@ -53,7 +53,7 @@ def YealyTestCase(kwargs,num_case):
 
     """
     gen = WELL512.WELL512("rngstates.csv")
-    sf = field.Field(filename=kwargs["field_filename"])
+    sf = field.Field(filenames={"field_filename": kwargs["field_filename"]})
     sun = sun_shape.SinglePointSun(0)
     #    params = {"length": 21, "height": 17, "pts_per_dim": 10}
     #north-facing receiver, no tilt
@@ -65,7 +65,7 @@ def YealyTestCase(kwargs,num_case):
     mirror = mirror_model.SinglePointGaussianMirror(numpy.array([300, 300, 0]), 5.0)
     weather_file = "./../weather_files/USA NV Tonopah Airport (TMY3).csv"
     method = flux_method.SimpleNormalFluxCalc(3)
-    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, sf)
+    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, sf, dni=950)
 #    print (fm.field.GetCoords())
     #distribute aimpoints evenly
     num_aimpoints = kwargs["aimpoint_rows"] * kwargs["aimpoint_cols"]
@@ -84,8 +84,8 @@ def YealyTestCase(kwargs,num_case):
     #for k in range(len(kwargs["solar_zenith"][:3])):   #Uncomment and use the slicing if testing for fewer iterations 
     for k in range(0,len(kwargs["solar_zenith"]),15):   #Uncomment to do step wise analysis 
         solar_vec = fm.getSolarVector(kwargs["solar_azimuth"][k],kwargs["solar_zenith"][k])
-        map_moving_aim = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,kwargs["dni"],False)
-        map_shift_image = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,kwargs["dni"],True)
+        map_moving_aim = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,False)
+        map_shift_image = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,True)
         diff_map = (numpy.absolute(map_moving_aim - map_shift_image) / map_moving_aim)
         MAPE = diff_map.mean() 
         err = (numpy.sum(map_moving_aim) - numpy.sum(map_shift_image)) / numpy.sum(map_moving_aim)
@@ -120,19 +120,19 @@ def RunTestCase(kwargs,num_cases=5):
     """
     #WELL512 generates random numbers
     gen = WELL512.WELL512("rngstates.csv")
-    sf = field.Field(filename=kwargs["field_filename"])
+    sf = field.Field(filenames={"field_filename": kwargs["field_filename"]})
     sun = sun_shape.SinglePointSun(0)
 #    params = {"length": 21, "height": 17, "pts_per_dim": 10}
     #north-facing receiver, no tilt
     params = {"length": 21, "height": 17, "pts_per_dim": kwargs["pts_per_dim"], "zenith_deg": 90, "azimuth_deg": 180,
-              "rec_cent_offset": [-20, -10, 0]}
+              "rec_cent_offset": [-20, -10, 0], "receiver_type":"flat_plate"}
     h = 150    #tower height
     receiver = geometry.FlatPlateReceiver(h, params)
     receiver.generateAimpointsGrid(kwargs["aimpoint_rows"],kwargs["aimpoint_cols"])
     mirror = mirror_model.SinglePointGaussianMirror(numpy.array([300, 300, 0]), 5.0)
     weather_file = "./../weather_files/USA NV Tonopah Airport (TMY3).csv"
     method = flux_method.SimpleNormalFluxCalc(3)
-    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, sf)
+    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, sf, dni=950)
 #    print (fm.field.GetCoords())
     solar_vec = fm.getSolarVector(kwargs["solar_azimuth"],kwargs["solar_zenith"])
     #distribute aimpoints evenly
@@ -146,8 +146,8 @@ def RunTestCase(kwargs,num_cases=5):
         for i in range(fm.field.num_heliostats):
             u = gen.getVariate()
             aimpoints.append(int(u * num_aimpoints))
-        map_moving_aim = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,kwargs["dni"],False)
-        map_shift_image = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,kwargs["dni"],True)
+        map_moving_aim = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,False)
+        map_shift_image = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,True)
         diff_map = (numpy.absolute(map_moving_aim - map_shift_image) / map_moving_aim)
         MAPE = diff_map.mean() 
         err = (numpy.sum(map_moving_aim) - numpy.sum(map_shift_image)) / numpy.sum(map_moving_aim)
@@ -188,7 +188,7 @@ def RunSingleMap(kwargs):
     mirror = mirror_model.SinglePointGaussianMirror(numpy.array([300, 300, 0]), 5.0)
     weather_file = "./../weather_files/USA NV Tonopah Airport (TMY3).csv"
     method = flux_method.SimpleNormalFluxCalc(3)
-    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, sf)
+    fm = flux_model.FluxModel(sun, mirror, receiver, method, weather_file, sf, dni=950)
 #    print (fm.field.GetCoords())
     solar_vec = fm.getSolarVector(kwargs["solar_azimuth"],kwargs["solar_zenith"])
 #    print(fm.receiver.aim_x[(3,3)])
@@ -199,9 +199,9 @@ def RunSingleMap(kwargs):
 #            aimpoints.append(int(u * num_aimpoints))
 #    print(aimpoints)
 #    assert(False)
-    map_moving_aim = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,kwargs["dni"],False)
+    map_moving_aim = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,False)
 #    print(map_moving_aim)
-    map_shift_image = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,kwargs["dni"],True)
+    map_shift_image = fm.GenerateFullFieldFluxMap(solar_vec,aimpoints,True)
     abs_diff = numpy.absolute(map_moving_aim - map_shift_image)
     diff_map = 100*(numpy.absolute(map_moving_aim - map_shift_image) / map_moving_aim)
     return map_shift_image, map_moving_aim, abs_diff
@@ -211,16 +211,17 @@ def RunSingleMap(kwargs):
 if __name__ == "__main__":
     cases = []   ##Will store input dictionaries of all cases
     ## Solar Fields obtained from SolarPilot
-    names = ["flat-daggett-50","flat-daggett-250","flat-morocco-50","flat-morocco-250"]
+    names = ["flat-daggett-50","flat-daggett-250","flat-morocco-50","flat-morocco-250",
+             "radial-daggett-50c","radial-daggett-250c","radial-morocco-50c","radial-morocco-250c"]
     filenames = [
-            "./../solarpilot_cases/flat-daggett-50.csv",
-            "./../solarpilot_cases/flat-daggett-250.csv",
-            "./../solarpilot_cases/flat-morocco-50.csv",
-            "./../solarpilot_cases/flat-morocco-250.csv" #,
-#            "./../solarpilot_cases/radial-daggett-50.csv",
-#            "./../solarpilot_cases/radial-daggett-250.csv",
-#            "./../solarpilot_cases/radial-morocco-50.csv",
-#            "./../solarpilot_cases/radial-morocco-250.csv"
+            "./../sample_fields/flat-daggett-50.csv",
+            "./../sample_fields/flat-daggett-250.csv",
+            "./../sample_fields/flat-morocco-50.csv",
+            "./../sample_fields/flat-morocco-250.csv",
+           "./../sample_fields/radial-daggett-50.csv",
+           "./../sample_fields/radial-daggett-250.csv",
+           "./../sample_fields/radial-morocco-50.csv",
+           "./../sample_fields/radial-morocco-250.csv"
             ]
     """ 
     OVER THE TIME (DNI>500):
@@ -231,7 +232,9 @@ if __name__ == "__main__":
     **********
     #TODO:    SHOULD WE MAKE A FUNCTION OF IT? 
         Given weather file and number of cases gets data, goes through YearlyTestCase and generates plots?
-    """ 
+    """
+
+    """ start of annual test
     num_cases = 2   #Number of cases to be simulated 
     weather_file = "./../weather_files/USA NV Tonopah Airport (TMY3).csv"
     weather_data = flux_model.ReadWeatherFile(weather_file, get_angles=True)
@@ -281,9 +284,9 @@ if __name__ == "__main__":
     #print(len(cases[0]["solar_azimuth"]))
     #print(cases[0])
           
-    """
-    Plotting and Storing the results (MAPE) in a csv file
-    """
+
+    # Plotting and Storing the results (MAPE) in a csv file
+
     for num_case in range(num_cases):
     #num_case = 1 #For using a specific case
         map_shift_image, diff_map, MAPES, errs = YealyTestCase(cases[num_case],num_case)
@@ -294,9 +297,9 @@ if __name__ == "__main__":
         numpy.savetxt(f_name+"Step_15_Yearly_MAPE.csv", arr)
         ##Plot MAPE of a year for every CASE
         plt.figure(1)
-        # """ We have an array of solar angles in this case: 
+        # We have an array of solar angles in this case:
         # Quick Testing - Use Slice - We have more than 2000 hours when DNI is more than 500 -
-        # TODO: The slice has to be same as used in YearlyTestCase function """
+        # TODO: The slice has to be same as used in YearlyTestCase function 
         #plt.plot(range(len(cases[num_case]["solar_zenith"][:3])), MAPES)   #Uncomment this to use slicing 
         plt.plot(range(0, len(cases[0]["solar_zenith"]),15), MAPES)         #Uncomment this to use step wise analysis
         #plt.plot(range(len(cases[num_case]["solar_zenith"])), MAPES)        #Uncomment to use every hour when DNI > 500
@@ -317,7 +320,8 @@ if __name__ == "__main__":
         plt.xlabel('X')
         plt.ylabel('P(MAPE<=X)')
         plt.savefig(f_name+'Step_15_ECDF_MAPE.png')
-        
+
+    end of annual test"""
         
     """ 
     SINGLE INSTANCE OF TIME:
@@ -329,30 +333,31 @@ if __name__ == "__main__":
             Fuction RunTestCase() - simulates given number of cases with full field - Plots Heatmap of MAPE
     """        
         
-   #  zenith_angles = [11.68,11.68,12.17,12.17]
-   #  azimuth_angles = [192.66,192.66,142.67,142.67]
-   #  kwargs = {}
-   #  for i in range(4):  ##Define Number of Cases to run
-   #      kwargs["field_filename"] = filenames[i]
-   #      kwargs["solar_zenith"] = zenith_angles[i] * numpy.pi / 180.
-   #      kwargs["solar_azimuth"] = azimuth_angles[i]* numpy.pi / 180.
-   #      kwargs["aimpoint_rows"] = 5
-   #      kwargs["aimpoint_cols"] = 5
-   #      kwargs["pts_per_dim"] = 20
-   #      kwargs["dni"] = 950
-   #      cases.append(kwargs.copy())
+    zenith_angles = [11.68,11.68,12.17,12.17]*2
+    azimuth_angles = [192.66,192.66,142.67,142.67]*2
+    kwargs = {}
+    for i in range(8):  ##Define Number of Cases to run
+        kwargs["field_filename"] = filenames[i]
+        kwargs["solar_zenith"] = zenith_angles[i] * numpy.pi / 180.
+        kwargs["solar_azimuth"] = azimuth_angles[i]* numpy.pi / 180.
+        kwargs["aimpoint_rows"] = 5
+        kwargs["aimpoint_cols"] = 5
+        kwargs["pts_per_dim"] = 20
+        kwargs["dni"] = 950
+        cases.append(kwargs.copy())
     
-   # # To Run Multiple Cases   
-   #  for i in range(1):    ##Define Number of Cases to run
-   #      map_shift_image, diff_map, MAPES, errs = RunTestCase(cases[i],num_cases=1)
-   #      print(map_shift_image)
-   #      print(names[i],numpy.mean(MAPES),numpy.mean(errs),numpy.std(MAPES),numpy.std(errs))
-   #      plotting.plot_obj_heatmap(map_shift_image,names[i]+"-objmap.png")
-   #      plotting.plot_obj_heatmap(diff_map,names[i]+"-diffmap.png")
+   # To Run Multiple Cases
+    for i in [4,5,6,7]:    ##Define Number of Cases to run
+        map_shift_image, diff_map, MAPES, errs = RunTestCase(cases[i],num_cases=10)
+        print(map_shift_image)
+        print(names[i],numpy.mean(MAPES),numpy.mean(errs),numpy.std(MAPES),numpy.std(errs))
+        plotting.plot_obj_heatmap(map_shift_image,names[i]+"-objmap.png")
+        plotting.plot_obj_heatmap(diff_map,names[i]+"-diffmap.png", vmin=0.0, vmax=0.10)
+        print("Case",i+1,"completed")
         
-   #  ##Generate single flux map
-   #  # map_shift_image, map_moving_aim, abs_diff = RunSingleMap(cases[0])
-   #  # plotting.plot_obj_heatmap(map_shift_image,names[i]+"-shiftmap.png")
-   #  # plotting.plot_obj_heatmap(map_moving_aim,names[i]+"-origmap.png")
-   #  # plotting.plot_obj_heatmap(abs_diff,names[i]+"-diffmap.png")
+    ##Generate single flux map
+    # map_shift_image, map_moving_aim, abs_diff = RunSingleMap(cases[0])
+    # plotting.plot_obj_heatmap(map_shift_image,names[i]+"-shiftmap.png")
+    # plotting.plot_obj_heatmap(map_moving_aim,names[i]+"-origmap.png")
+    # plotting.plot_obj_heatmap(abs_diff,names[i]+"-diffmap.png")
     

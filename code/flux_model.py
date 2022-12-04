@@ -6,9 +6,11 @@ Framework for building out models for flux modeling and outputting images
 to either a data file or an optimization model.
 """
 import csv
-import numpy
-import sol_pos
+
 import matplotlib.pyplot as plt
+import numpy
+
+import sol_pos
 import sp_module
 
 def ReadWeatherFile(weather_file, get_angles=False):
@@ -40,14 +42,14 @@ def ReadWeatherFile(weather_file, get_angles=False):
         d[header_keys[i]] = fline[i]
     weather_data["lat"] = float(d["Latitude"])
     weather_data["lon"] = float(d["Longitude"])
-    weather_data["time_zone"] = int(d["Time Zone"])
+    weather_data["time_zone"] = float(d["Time Zone"])
     # Third line is column headers for time-series data, just track dni
     keys = next(reader)
     year_idx = keys.index("Year")
     month_idx = keys.index("Month")
     day_idx = keys.index("Day")
     hour_idx = keys.index("Hour")
-    if d["Source"] == "IWEC":
+    if d["Source"] == "IWEC" or d["Source"]=="INTL":
         dni_idx = keys.index("Beam")
     else:
         dni_idx = keys.index("DNI")
@@ -72,8 +74,8 @@ def ReadWeatherFile(weather_file, get_angles=False):
 
 class FluxModel(object):
     def __init__(self,sun_shape, mirror_shape, receiver, flux_method, 
-                 weather_file, field, filenames = None,hour_id = None, 
-                 use_sp_flux = False, dni = None):
+                 weather_file, field, filenames = None, hour_id = None,
+                 use_sp_flux = False, dni = None, read_flux_from_file = False):
         self.sun_shape = sun_shape
         self.mirror_shape = mirror_shape
         self.receiver = receiver
@@ -83,14 +85,22 @@ class FluxModel(object):
         self.filenames = filenames
         self.hour_id = hour_id
         self.use_sp_flux = use_sp_flux
+        self.read_flux_from_file = read_flux_from_file
         if self.receiver.dni != None:
             self.dni = self.receiver.dni
         elif self.hour_id != None: 
             self.dni = self.weather_data['dni'][hour_id]
+        elif dni != None:
+            self.dni = dni
         else: 
             msg = "No inputs given for DNI."
             raise Exception(msg)
-        self.get_sp_flux_parallel()
+        if use_sp_flux:
+            self.get_sp_flux_parallel()
+        elif self.read_flux_from_file:
+            self.get_flux_maps_from_files()
+        else:
+            self.get_halos_native_flux()
         if self.receiver.params["receiver_type"] == "External cylindrical":
             print("Generating Fraction Maps")
             self.getFractionMap()
@@ -98,11 +108,10 @@ class FluxModel(object):
             print("No fraction maps generation - Flat Plate")
             pass
 
-
     def addSettings(self,settings):
         self.settings = settings
-        
-        
+
+
     def HermiteConvolution(self, aim_loc, measure_loc):
         pass  # do the hermite evaluation
 
@@ -160,7 +169,7 @@ class FluxModel(object):
         else:
             full_map = numpy.zeros_like(self.receiver.x)
             for i in range(self.field.num_heliostats): 
-                full_map += self.GenerateSingleFluxMap(i,aimpoints[i],solar_vector,self.dni,approx)
+                full_map += self.GenerateSingleFluxMap(i,aimpoints[i],solar_vector,approx)
         return full_map
 
 
@@ -184,11 +193,71 @@ class FluxModel(object):
 
         """
         flux = {}
-        for h in self.field.helios_by_section[section_id]:
-            flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni)
-            flux[h] = numpy.array(flux_map) 
+        if self.use_sp_flux:
+            for h in self.field.helios_by_section[section_id]:
+                flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni)
+                flux[h] = numpy.array(flux_map)
+        elif self.read_flux_from_file:
+            import inputs
+            num_cols = self.receiver.params["pts_per_len_dim"]
+            num_rows = self.receiver.params["pts_per_ht_dim"]
+            for h in self.field.helios_by_section[section_id]:
+                fname = self.filenames["heliostat_file_dir"]+"heliostat"+str(h+1)+".csv"
+                flux[h] = inputs.readFluxMapFromCSV(fname, num_rows, num_cols)
+        else:
+            for h in self.field.helios_by_section[section_id]:
+                if self.receiver.params["receiver_type"] == "Flat plate":
+                    center_idx = len(self.receiver.aimpoints) // 2
+                else:
+                    center_idx = len(self.receiver.aimpoints[h]) // 2
+                solar_vector = self.getSolarVector(self.weather_data["solar_azimuth"][self.hour_id], self.weather_data["solar_zenith"][self.hour_id])
+                flux_map = self.GenerateSingleFluxMap(h, center_idx, solar_vector, True)
+                flux[h] = numpy.array(flux_map)
         return flux
 
+    def get_halos_native_flux(self):
+        """
+        Get flux map per heliostat in parallel Using HALOS
+
+        Returns
+        -------
+        None. Populates self.parallel_flux_maps
+
+        """
+        self.sp_flux = sp_module.SP_Flux(self.filenames, self.field)
+        print(len(self.field.x))
+        section_id = []
+        for s in range(self.field.num_sections):
+            section_id.append(s)
+        self.parallel_flux_maps = {}
+        for s in section_id:
+            sect = self.flux_by_section(s)
+            self.parallel_flux_maps.update(sect)
+        for h in self.parallel_flux_maps.keys():
+            self.parallel_flux_maps[h] = numpy.matrix(self.parallel_flux_maps[h]).round(3)  # round to nearest Watt
+        print("HALOS Native Flux Calculation - Done!")
+
+    def get_flux_maps_from_files(self):
+        """
+        Get flux maps by reading CSV files directly.
+
+        Returns
+        -------
+        None. Populates self.parallel_flux_maps
+        """
+        section_id = []
+        for s in range(self.field.num_sections):
+            section_id.append(s)
+        import multiprocessing
+        p = multiprocessing.Pool(multiprocessing.cpu_count())
+        results = p.map(self.flux_by_section, section_id)
+        self.parallel_flux_maps = {}
+        for sect in results:
+            self.parallel_flux_maps.update(sect)
+        for h in self.parallel_flux_maps.keys():
+            self.parallel_flux_maps[h] = numpy.matrix(self.parallel_flux_maps[h]).round(3)  # round to nearest Watt
+        print("Parallel Flux Calculation - Done!")
+        del (p)
 
     def get_sp_flux_parallel(self):
         """
@@ -276,16 +345,18 @@ class FluxModel(object):
             aim_cols = 1
             #PARALLEL FLUX
             map_center = self.parallel_flux_maps[helio_idx]
-            shift_size = round(len(map_center)/aim_rows)
+            x_shift_size = 0
+            y_shift_size = round(len(map_center)/aim_rows)
 
         elif self.receiver.params["receiver_type"] == "Flat plate":
             center_idx = len(self.receiver.aimpoints) // 2
             map_center = self.parallel_flux_maps[helio_idx]
             aim_cols = int(self.receiver.params["aim_cols"])
-            shift_size = round(len(map_center)/aim_cols)
+            x_shift_size = round(len(map_center)/aim_cols)
+            y_shift_size = round(len(map_center)/aim_rows)
         map_center = numpy.array(map_center)   
         center_map = map_center.flatten()
-        if not self.use_sp_flux:
+        if not (self.use_sp_flux or self.read_flux_from_file):
             mirror_power = self.dni * self.field.mirror_area
             factor = self.GetNormalizationFactor(mirror_power,center_map)
         else:
@@ -297,14 +368,14 @@ class FluxModel(object):
             for x_shift in range(0,(aim_cols//2)+1): #Similarly x_shift 0 is center column where as +2 is ahead and -2 is behind
                 ## Center Line
                 ## Positive in x moves ahead - Positive in y here moves down
-                x_frwd = shift_2d_array(map_center, x_shift*shift_size, y_shift*shift_size, constant=0)
+                x_frwd = shift_2d_array(map_center, x_shift*x_shift_size, y_shift*y_shift_size, constant=0)
                 ##TO PLOT
                 # im = plt.imshow(x_frwd)
                 # plt.colorbar(im)
                 # plt.tight_layout()
                 # plt.show()
                 maps[center_idx + (aim_cols * y_shift) + x_shift] = factor * x_frwd.flatten()
-                x_bcwd = shift_2d_array(map_center, - x_shift*shift_size, y_shift*shift_size, constant=0)
+                x_bcwd = shift_2d_array(map_center, - x_shift*x_shift_size, y_shift*y_shift_size, constant=0)
                 ##TO PLOT
                 # im = plt.imshow(x_bcwd)
                 # plt.colorbar(im)
@@ -312,9 +383,9 @@ class FluxModel(object):
                 # plt.show()
                 maps[center_idx + (aim_cols * y_shift) - x_shift] = factor * x_bcwd.flatten()
                 ## Negative in x moves behind - Negative in y here moves up from center
-                x_frwd = shift_2d_array(map_center, x_shift*shift_size, - y_shift*shift_size, constant=0)
+                x_frwd = shift_2d_array(map_center, x_shift*x_shift_size, - y_shift*y_shift_size, constant=0)
                 maps[center_idx - (aim_cols * y_shift) + x_shift] = factor * x_frwd.flatten()
-                x_bcwd = shift_2d_array(map_center, - x_shift*shift_size, - y_shift*shift_size, constant=0)
+                x_bcwd = shift_2d_array(map_center, - x_shift*x_shift_size, - y_shift*y_shift_size, constant=0)
                 maps[center_idx - (aim_cols * y_shift) - x_shift] = factor * x_bcwd.flatten()
         #print(maps.keys())   ##Indexes Tested - Image shift tested using plotting
         return maps
@@ -356,7 +427,7 @@ class FluxModel(object):
         col_sum_each_map = self.SectionFluxMap()
         col_sums = []  # Stores sum as: 1st list is sum of 1st column of each section
 
-        for ncol in range(self.receiver.params["pts_per_dim"]):
+        for ncol in range(self.receiver.params["pts_per_len_dim"]):
             col_sum_each_column = []   #Stores sum of one specific column from each section
             for s in range(self.field.num_sections):
                 col_sum_each_column.append((col_sum_each_map[s])[ncol])
@@ -365,7 +436,7 @@ class FluxModel(object):
         self.fraction_maps = []
         for s in range(self.field.num_sections):
             fraction_map = pandas.DataFrame(numpy.zeros_like(self.receiver.x))
-            for ncol in range(self.receiver.params["pts_per_dim"]):
+            for ncol in range(self.receiver.params["pts_per_len_dim"]):
                 fraction_map[ncol] = fraction_map[ncol] + (col_sums[ncol])[s]/sum(col_sums[ncol])
             self.fraction_maps.append(numpy.array(fraction_map))
 
@@ -379,13 +450,13 @@ class FluxModel(object):
         """  
         center_idx = len(self.receiver.aimpoints) // 2
         maps = {}
-        center_map = self.GenerateSingleFluxMap(helio_idx,center_idx,solar_vector,dni,approx).flatten()
+        center_map = self.GenerateSingleFluxMap(helio_idx,center_idx,solar_vector,approx).flatten()
         mirror_power = dni * self.field.mirror_area
         factor = self.GetNormalizationFactor(mirror_power,center_map)
         maps[center_idx] = factor * center_map
         for aimpoint_idx in range(len(self.receiver.aimpoints)):
             if aimpoint_idx != center_idx:
-                maps[aimpoint_idx] = factor * self.GenerateSingleFluxMap(helio_idx,aimpoint_idx,solar_vector,dni,approx).flatten()
+                maps[aimpoint_idx] = factor * self.GenerateSingleFluxMap(helio_idx,aimpoint_idx,solar_vector,approx).flatten()
         return maps
 
 

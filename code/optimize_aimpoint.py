@@ -7,22 +7,33 @@ Pyomo modeling language.
 
 """
 
+import numpy
 import pyomo
 import pyomo.environ as pe
+
 import sol_pos
-import numpy
 
 ### Methods or objective and constraint rules
 EPSILON = 1e-8
+# def objectiveRule(model):
+#         return sum(  #m 
+#                     sum( #h
+#                         sum(#a
+#                             model.obj_by_point[m] * model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
+#                             for a in model.aimpoints
+#                         ) for h in model.heliostats
+#                     ) for m in model.measurement_points
+#                 )
+
 def objectiveRule(model):
         return sum(  #m 
-                    sum( #h
-                        sum(#a
-                            model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
-                            for a in model.aimpoints
-                        ) for h in model.heliostats
-                    ) for m in model.measurement_points
+                    model.obj_by_point[m] * model.surface_area[m]* model.incident_flux[m]
+                    for m in model.measurement_points
                 )
+
+
+def fluxCalcRule(model, m):
+    return model.incident_flux[m] == sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats)
 
 
 def aimSelectRule(model,h):
@@ -45,18 +56,24 @@ def fluxUBRule(model,m):
         return pe.Constraint.Feasible
     if sum(sum(model.flux[h,m,a] for a in model.aimpoints) for h in model.heliostats) < EPSILON:
         return pe.Constraint.Feasible
-    return sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) <= model.flux_ubs[m]
+    return model.incident_flux[m] <= model.flux_ubs[m]
+    # return sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) <= model.flux_ubs[m]
+
+
+# def fluxDiffRule(model,m,mp):
+#     if m not in model.neighboring_points[mp]:
+#         return pe.Constraint.Feasible
+#     return (
+#             sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) -
+#             sum(sum(model.flux[h,mp,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) 
+#             <= model.flux_diff
+#             )
 
 
 def fluxDiffRule(model,m,mp):
-    if (sum(sum(model.flux[h,m,a] for a in model.aimpoints) for h in model.heliostats) < EPSILON and
-            sum(sum(model.flux[h,mp,a] for a in model.aimpoints) for h in model.heliostats) < EPSILON):
+    if m not in model.neighboring_points[mp]:
         return pe.Constraint.Feasible
-    return (
-            sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) -
-            sum(sum(model.flux[h,mp,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) 
-            <= model.flux_diff[m,mp]
-            )
+    return (model.incident_flux[m] - model.incident_flux[mp] <= model.flux_diff)
 
 
 def orderedDefocusingRule(model, h, hp):
@@ -64,10 +81,37 @@ def orderedDefocusingRule(model, h, hp):
         return model.defocus[h] >= model.defocus[hp]
     return pe.Constraint.Feasible
 
+
 def groupingRule(model, h, hp, a):
     if h < hp and model.group_assignment[h] == model.group_assignment[hp]:
         return model.select_aimpoint[h,a] == model.select_aimpoint[hp,a]
     return pe.Constraint.Feasible
+
+
+def columnDifferenceRule(model, c, cp):
+    if c != cp:
+        return (
+            sum(model.incident_flux[m] for m in model.measurement_points_in_column[c]) 
+            >= sum(model.min_fraction * model.incident_flux[m] for m in model.measurement_points_in_column[cp]) 
+        )
+    return pe.Constraint.Feasible
+    
+
+
+def neighborRule(model, m):
+    """
+    determines neighboring measurement points.  in this case, we assume that the neighbors are all vertical.
+    """
+    if m+model.num_cols <= model.num_measurement_points:
+        yield m+model.num_cols
+    if m-model.num_cols <= 0:
+        yield m-model.num_cols
+
+
+def columnInitRule(model, c):
+    for i in range(model.num_rows):
+        yield c+(i*model.num_cols)
+
 
 class AimpointOptimizer(object):
     def __init__(self, flux_model, params={"section_id":1,"num_sections":1,
@@ -89,10 +133,18 @@ class AimpointOptimizer(object):
         self.flux_model = flux_model
         self.model = pe.ConcreteModel()
         self.params["flux_constraint_limit"] = 500 /params["num_sections"]
+        self.solver = params.get("solver")
+        if self.solver is None:
+            self.solver = "cbc"
+        # if warmstart = False, return and print zeros for initial values listed
+        self.time_add = 0
+        self.obj_val_feas_add = 0
+        self.init_defocused = 0
 
     def generateMeasurementSubset(self):
         measurement_points = []
-        pts_per_dim = int(self.flux_model.receiver.params["pts_per_dim"])
+        m_rows = int(self.flux_model.receiver.params["pts_per_ht_dim"])
+        m_cols = int(self.flux_model.receiver.params["pts_per_len_dim"])
         if self.flux_model.receiver.params["receiver_type"] == "Flat plate":
             aim_cols = int(self.flux_model.receiver.params["aim_cols"])
 
@@ -100,27 +152,38 @@ class AimpointOptimizer(object):
             aim_cols = 1
   
         aim_rows = int(self.flux_model.receiver.params["aim_rows"])
-        row_spacing = pts_per_dim // aim_cols
-        col_spacing = pts_per_dim // aim_rows
+        row_spacing = m_cols // aim_cols
+        col_spacing = m_rows // aim_rows
         first_row = row_spacing // 2
         first_col = col_spacing // 2
         for r in range(aim_rows):
             for c in range(aim_cols):
-                pt = (first_row + (r*row_spacing)) * pts_per_dim + (first_col + (c*col_spacing)) + 1
+                pt = (first_row + (r*row_spacing)) * m_cols + (first_col + (c*col_spacing)) + 1
                 measurement_points.append(pt)
         self.model.check_measurement_points = pe.Set(initialize = measurement_points)
+
+
+    def generateColumnsSubset(self):
+        self.model.columns = pe.Set(initialize=range(1,self.flux_model.receiver.params["pts_per_len_dim"]+1))
+        self.model.measurement_points_in_column = pe.Set(self.model.columns, initialize=columnInitRule)
 
 
     def generateSets(self):
         """
         Generate sets for the pyomomodel object.
         """
-        self.num_measurement_points = self.flux_model.receiver.x.size
+        self.model.num_measurement_points = self.flux_model.receiver.x.size
+        self.model.num_rows = self.flux_model.receiver.params["pts_per_ht_dim"]
+        self.model.num_cols = self.flux_model.receiver.params["pts_per_len_dim"]
         self.model.measurement_points = pe.Set(
-                initialize = range(1,self.num_measurement_points+1)
+                initialize = range(1,self.model.num_measurement_points+1)
                 )  #M
         
         self.generateMeasurementSubset()
+        self.generateColumnsSubset()
+
+        if self.flux_model.receiver.params["use_flux_gradient"] == 1:
+            self.model.neighboring_points = pe.Set(self.model.measurement_points, initialize=neighborRule)
         
         self.num_aimpoints = self.flux_model.receiver.num_aimpoints
         self.model.aimpoints = pe.Set(initialize = range(1,self.num_aimpoints+1)) #A
@@ -168,6 +231,7 @@ class AimpointOptimizer(object):
         flux_lbs = {}
         flux_ubs = {}
         surface_area = {}
+        obj_by_point = {}
         if self.params["num_sections"] == 1:
             fraction = 1.0
         else: 
@@ -175,7 +239,7 @@ class AimpointOptimizer(object):
                 fraction = self.flux_model.fraction_maps[self.params["section_id"]].flatten()
             else:   
                 fraction = self.flux_model.field.section_flux[self.params["section_id"]]
-        for i in range(self.num_measurement_points):
+        for i in range(self.model.num_measurement_points):
             if self.flux_model.receiver.params["receiver_type"] == "External cylindrical":
                 flux_lbs[i+1] = self.flux_model.receiver.flux_lower_limits[i] * fraction[i]
                 flux_ubs[i+1] = self.flux_model.receiver.flux_upper_limits[i] * fraction[i]
@@ -183,15 +247,15 @@ class AimpointOptimizer(object):
                 flux_lbs[i+1] = self.flux_model.receiver.flux_lower_limits[i] * fraction
                 flux_ubs[i+1] = self.flux_model.receiver.flux_upper_limits[i] * fraction      
             surface_area[i+1] = self.flux_model.receiver.surface_area[i]
-        
-        #if specifying flux maps from a file, do so.
+            obj_by_point[i+1] = self.flux_model.receiver.obj_by_point[i]
+        #if specifying flux maps from a file, do so. #TODO remove this as the .csv's method will replace
         try: 
             if self.params["flux_from_file"]:
                 flux = self.getFluxFromFile()
-                return flux, flux_lbs, flux_ubs, surface_area
+                return flux, flux_lbs, flux_ubs, surface_area, obj_by_point
         except KeyError:
             pass
-        flux = {} 
+        flux = {}
         for h in self.model.heliostats:
             center_idx = self.flux_model.receiver.num_aimpoints//2
             h_map = self.flux_model.ShiftImage_GenerateSingleHeliostatFluxMaps(h,solar_vector,approx)
@@ -202,7 +266,7 @@ class AimpointOptimizer(object):
                 elif self.flux_model.receiver.params["receiver_type"] == "External cylindrical":
                     for a in self.model.aimpoints:
                         flux[h,m,a] = h_map[a-1][m-1]
-        return flux, flux_lbs, flux_ubs, surface_area
+        return flux, flux_lbs, flux_ubs, surface_area, obj_by_point
     
     
     def getFluxFromFile(self):
@@ -233,12 +297,15 @@ class AimpointOptimizer(object):
         None. Assigns inputs to the pyomo model
 
         """
-        flux, flux_lbs, flux_ubs, surface_area = self.getFluxParameters()
+        flux, flux_lbs, flux_ubs, surface_area, obj_by_point = self.getFluxParameters()
         self.model.flux = pe.Param(self.model.heliostats, self.model.measurement_points, self.model.aimpoints, initialize = flux)
         self.model.flux_lbs = pe.Param(self.model.measurement_points, initialize = flux_lbs)
-        self.model.flux_ubs = pe.Param(self.model.measurement_points, initialize = flux_ubs) 
-        self.model.flux_diff = pe.Param(self.model.measurement_points, self.model.measurement_points, mutable=True, initialize = 1e9)
+        self.model.flux_ubs = pe.Param(self.model.measurement_points, initialize = flux_ubs)
+        if self.flux_model.receiver.params["use_flux_gradient"] == 1:
+            self.model.flux_diff = pe.Param(mutable=True, initialize = self.flux_model.receiver.params["gradient_limit"]/self.params["num_sections"])
         self.model.surface_area = pe.Param(self.model.measurement_points, initialize = surface_area)
+        self.model.obj_by_point = pe.Param(self.model.measurement_points, initialize = obj_by_point)
+        self.model.min_fraction = pe.Param(initialize=self.flux_model.receiver.params["min_col_fraction"])
         if self.params["ordered_defocus"]:
             self.getHeliostatOrdering(self.params["order_method"])
         self.model.flux_constraint_limit = self.params["flux_constraint_limit"]
@@ -266,7 +333,7 @@ class AimpointOptimizer(object):
     def generateVariables(self):
         self.model.select_aimpoint = pe.Var(self.model.heliostats * self.model.aimpoints, domain=pe.Binary)
         self.model.defocus = pe.Var(self.model.heliostats, domain=pe.NonNegativeReals, bounds=(0,1))
-
+        self.model.incident_flux = pe.Var(self.model.measurement_points, domain=pe.NonNegativeReals)
 
     def getHeliostatOrdering(self, method="eff"):
         """
@@ -304,13 +371,17 @@ class AimpointOptimizer(object):
             self.model.flux_ub_con = pe.Constraint(self.model.check_measurement_points, rule=fluxUBRule)    
         else:
             self.model.flux_ub_con = pe.Constraint(self.model.measurement_points, rule=fluxUBRule)
-        if self.params["num_sections"] == 1:  #relax differential for subproblems
+        if self.flux_model.receiver.params["use_flux_gradient"] == 1:
             self.model.flux_diff_con = pe.Constraint(self.model.measurement_points * self.model.measurement_points, rule=fluxDiffRule)
         if self.params["ordered_defocus"]:
             self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats, rule=orderedDefocusingRule)
         if self.flux_model.settings["heliostat_group_size"] > 1: 
-            self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
+            self.model.group_decisions_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
             print("group cons made")
+        if self.model.min_fraction > EPSILON:
+            self.model.flux_calc_con = pe.Constraint(self.model.measurement_points, rule=fluxCalcRule)
+            self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
+
 
     def createFullProblem(self):
         """
@@ -328,14 +399,14 @@ class AimpointOptimizer(object):
         self.genConstraintsBinOnly()
 
 
-    def optimize(self, mipgap=0.01, timelimit=300, solver='cbc', tee=False, keepfiles=False, warmstart=False): 
+    def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
         """
         Solves the optimization model 
 
         Parameters
         ----------
         mipgap : 
-            optimality gap. The default is 0.01.
+            optimality gap. The default is 0.001.
         timelimit : 
             Time limit for the solve in seconds. The default is 300.
         solver : 
@@ -355,17 +426,17 @@ class AimpointOptimizer(object):
         """
         if warmstart: 
             import opt_heuristic
-            heuristic = opt_heuristic.AcceptRejectHeuristic(3)
-            heuristic.getIFS(self.model)
-        opt = pe.SolverFactory(solver)
-        if solver == "cbc":
+            heuristic = opt_heuristic.FluxStoreSize(10)
+            self.obj_val_feas_add, self.time_add, self.init_defocused = heuristic.getIFS(self.model)
+        opt = pe.SolverFactory(self.solver)
+        if self.solver == "cbc":
             opt.options["ratioGap"] = mipgap
             opt.options["seconds"] = timelimit
-        elif solver == "glpk":
+        elif self.solver == "glpk":
             opt.options["mipgap"] = mipgap
             opt.options["tmlim"] = timelimit
             opt.options["cuts"] = 1
-        elif solver == "cplex":
+        elif self.solver == "cplex":
             opt.options["mipgap"] = mipgap
             opt.options["timelimit"] = timelimit
         else:
@@ -385,8 +456,8 @@ class AimpointOptimizer(object):
             Contains results from optimization model
 
         """
-        self.flux_map = numpy.zeros(self.num_measurement_points,dtype=float)
-        for m in range(1,self.num_measurement_points+1):
+        self.flux_map = numpy.zeros(self.model.num_measurement_points,dtype=float)
+        for m in range(1,self.model.num_measurement_points+1):
             try: 
                 self.flux_map[m-1] = sum( #h
                         sum(#a
@@ -397,17 +468,16 @@ class AimpointOptimizer(object):
             except TypeError:
                 assert(False)
         self.aimpoint_select_map = numpy.zeros(self.flux_model.field.x.size)
-        self.contribution_by_heliostat = numpy.zeros([self.flux_model.field.x.size, self.num_measurement_points])
+        self.contribution_by_heliostat = numpy.zeros([self.flux_model.field.x.size, self.model.num_measurement_points])
         self.num_defocused_heliostats = 0
-        
         for h in self.model.heliostats:
             if self.model.defocus[h].value > 0.5:
                 self.num_defocused_heliostats += 1
-            else: 
+            else:
                 for a in self.model.aimpoints:
                     if self.model.select_aimpoint[h,a].value > 0.5:
                         self.aimpoint_select_map[h-1] = a
-                        for m in range(self.num_measurement_points):
+                        for m in range(self.model.num_measurement_points):
                             self.contribution_by_heliostat[h,m] = self.model.flux[h,m+1,a]
                         break
         if self.gap == None:
@@ -415,14 +485,25 @@ class AimpointOptimizer(object):
             # TODO parse the results text to obtain the gap when pyomo times out
         else:
             ub = pe.value(self.model.OBJ) * (self.gap + 1)
-        d = {"flux_map":self.flux_map, 
+
+        
+        d = {
+            "flux_map":self.flux_map, 
              "aimpoint_select_map":self.aimpoint_select_map,
              "obj_value":pe.value(self.model.OBJ), 
              "num_defocused_heliostats":self.num_defocused_heliostats,
              "upper_bound":ub,
              "contribution_by_heliostat":self.contribution_by_heliostat,
              "section_id":self.params["section_id"],
-             "utilization": 1.0 - (float(self.num_defocused_heliostats) / self.num_heliostats)}
+             "utilization": 1.0 - (float(self.num_defocused_heliostats) / self.num_heliostats),
+             "flux_ham":self.model.flux,
+             "measurement_pts":self.model.measurement_points,
+             "aimpoints":self.model.aimpoints,
+             "surface_area":self.model.surface_area,
+             "obj_val_feas_add":self.obj_val_feas_add,
+             "time_add":self.time_add,
+             "init_defocused":self.init_defocused
+             }
         return d
 
 

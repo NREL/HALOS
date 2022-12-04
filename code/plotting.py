@@ -9,7 +9,6 @@ import scipy
 import scipy.stats
 import numpy as np
 
-
 def get_grid_points(lb, ub, num_pts):
     return lb + (ub - lb) * (np.arange(num_pts, dtype=float)) / (num_pts - 1)
 
@@ -44,7 +43,7 @@ def plot_results_vector(x, vectors, names, fname):
         # Question from Alex M: Did you mean to do 'ax.plt.plot(...) here?
         plt.plot(list(x), list(vectors[v]), label=names[v])
     plt.legend()
-    plt.savefig(fname)
+    plt.savefig("./../outputs/"+fname)
 
 
 #    plt.show()
@@ -106,12 +105,17 @@ def search_best_triple(bounds, s1, s2, s3, pts_per_dim, est_points, lb=0., ub=1.
     return best_sol, best_obj, objs, est_objs
 
 
-def plot_obj_heatmap(objs, fname):
+def plot_obj_heatmap(objs, fname, vmin=None, vmax=None):
+    import numpy
     plt.cla()
     plt.clf()
-    plt.imshow(objs, cmap='hot')
+    if vmin is None:
+        vmin = numpy.array(objs).min()
+    if vmax is None:
+        vmax = numpy.array(objs).max()
+    plt.imshow(objs, cmap='hot', vmin=vmin, vmax=vmax)
     plt.colorbar()
-    plt.savefig(fname)
+    plt.savefig("./../outputs/"+fname)
 
 
 def plot_2d_results(best_sol, best_obj, objs, est_objs, bounds, lb, ub, num_pts, fname, s1, s2):
@@ -176,10 +180,10 @@ def plot_optimal_flux_heatmap(outputs,fname):
     None.
 
     """
-    flux = outputs.flux_map.reshape([outputs.flux_model.receiver.params["pts_per_dim"],outputs.flux_model.receiver.params["pts_per_dim"]])
-    plt.imshow(flux, cmap='hot')
+    flux = outputs.flux_map.reshape([outputs.flux_model.receiver.params["pts_per_ht_dim"],outputs.flux_model.receiver.params["pts_per_len_dim"]])
+    plt.imshow(flux, cmap='hot',vmin=0,vmax=1000)
     plt.colorbar()
-    plt.savefig(fname)
+    plt.savefig("./../outputs/"+fname)
     plt.cla()
     plt.clf()
     
@@ -198,16 +202,17 @@ def plot_flux_violation(outputs,fname):
     Plots heatmap
 
     """
-    pts = outputs.flux_model.receiver.params["pts_per_dim"]
+    pts_ht = outputs.flux_model.receiver.params["pts_per_ht_dim"]
+    pts_len = outputs.flux_model.receiver.params["pts_per_len_dim"]
     flux_ub = outputs.flux_model.receiver.flux_upper_limits
     flux = outputs.flux_map
     flux_violation = np.zeros_like(flux)
     for m in range(len(flux)):
         flux_violation[m] = max(0.0, flux[m]-flux_ub[m])
-    flux_violation = np.array(flux_violation).reshape(pts,pts)
+    flux_violation = np.array(flux_violation).reshape(pts_ht,pts_len)
     plt.imshow(flux_violation, cmap='hot')
     plt.colorbar()
-    plt.savefig(fname)
+    plt.savefig("./../outputs/"+fname)
     plt.cla()
     plt.clf()
     ## The following code plots column wise max-flux-violation. 
@@ -218,6 +223,35 @@ def plot_flux_violation(outputs,fname):
     # plt.savefig(fname+"_col_max")
     # plt.cla()
     # plt.clf()
+
+def plot_flux_slack(outputs,fname):
+    """
+    Plots heatmap of flux_slack at each measurement point. A value of zero is assigned to those
+    points at which the flux constraint is 'tight'
+
+    Parameters
+    ----------
+    outputs : output - results - from the optimization model
+    fname : Filename for saving plot
+
+    Returns
+    -------
+    Plots heatmap
+
+    """
+    pts_ht = outputs.flux_model.receiver.params["pts_per_ht_dim"]
+    pts_len = outputs.flux_model.receiver.params["pts_per_len_dim"]
+    flux_ub = outputs.flux_model.receiver.flux_upper_limits
+    flux = outputs.flux_map
+    flux_slack = np.zeros_like(flux)
+    for m in range(len(flux)):
+        flux_slack[m] = max(0.0, flux_ub[m]-flux[m])
+    flux_slack = np.array(flux_slack).reshape(pts_ht,pts_len)
+    plt.imshow(flux_slack, cmap='hot')
+    plt.colorbar()
+    plt.savefig("./../outputs/"+fname)
+    plt.cla()
+    plt.clf()
     
 def plot_field(outputs,fname):
     """
@@ -237,7 +271,7 @@ def plot_field(outputs,fname):
     y = outputs.flux_model.field.y.flatten()
     plt.scatter(x, y, s=6)
     plt.tight_layout()
-    plt.savefig(fname, dpi = 2000)
+    plt.savefig("./../outputs/"+fname, dpi = 2000)
     
 def plot_optimal_aimpoint_allocation(outputs,fname):
     """
@@ -251,8 +285,8 @@ def plot_optimal_aimpoint_allocation(outputs,fname):
     """
     x = outputs.flux_model.field.x.flatten()
     y = outputs.flux_model.field.y.flatten()
-    colors = plt.scatter(x,y,s=6,c=outputs.aimpoint_select_map,cmap='hsv')
-    plt.savefig(fname, dpi= 2000)
+    colors = plt.scatter(x,y,s=6,c=outputs.aimpoint_select_map,cmap='Set1')
+    plt.savefig("./../outputs/"+fname, dpi= 2000)
     plt.cla()
     plt.clf()
     
@@ -268,8 +302,34 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     """
     x = outputs.flux_model.receiver.aim_x.flatten()
     y = outputs.flux_model.receiver.aim_z.flatten()
-    colors = plt.scatter(x,y,s=6,c=range(1,outputs.flux_model.receiver.num_aimpoints+1),cmap='hsv')
-    plt.savefig(fname, dpi= 2000)
+    colors = plt.scatter(x,y,s=6,c=range(1,outputs.flux_model.receiver.num_aimpoints+1),cmap='Set1')
+    plt.savefig("./../outputs/"+fname, dpi= 2000)
+    plt.cla()
+    plt.clf()
+
+def plot_measurement_and_aimpoints(outputs,fname):
+    """
+    Plots graph overlapping measurement and aimpoints. 
+
+    Parameters
+    ----------
+    outputs : outputs : output - results - from the optimization model 
+    fname : Filename for saving plot
+    
+    """
+    # plot measurement points
+    z_plot = outputs.flux_model.receiver.z.flatten()
+    if outputs.flux_model.receiver.params["receiver_type"] == "Flat plate":
+        x_plot = outputs.flux_model.receiver.x.flatten()
+    elif outputs.flux_model.receiver.params["receiver_type"] == "External cylindrical":
+        x_plot  = -5*np.ones(len(z_plot))
+    plt.scatter(x_plot,z_plot,color='k',s=8)
+
+    # plot aim points on the same graph
+    x = outputs.flux_model.receiver.aim_x.flatten()
+    y = outputs.flux_model.receiver.aim_z.flatten()
+    plt.scatter(x,y,color='r',marker='x')
+    plt.savefig("./../outputs/"+fname, dpi = 2000)
     plt.cla()
     plt.clf()
 
@@ -289,7 +349,7 @@ def plot_defocused(outputs,fname):
     for i in range(len(outputs.aimpoint_select_map)):
         color.append('black' if outputs.aimpoint_select_map[i] == 0 else 'r')
     colors = plt.scatter(x,y,s=5,c=color,cmap='hsv')
-    plt.savefig(fname, dpi = 2000)
+    plt.savefig("./../outputs/"+fname, dpi = 2000)
     plt.cla()
     plt.clf()
     
@@ -312,7 +372,7 @@ def plot_field_sections(outputs, fname):
             y.append(outputs.flux_model.field.y.flatten()[h])
             col.append(float(idx))
     plt.scatter(x,y,s=5,c = col,cmap="jet")
-    plt.savefig(fname, dpi= 2000)
+    plt.savefig("./../outputs/"+fname, dpi= 2000)
     plt.cla()
     plt.clf()
     

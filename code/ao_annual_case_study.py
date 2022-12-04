@@ -8,11 +8,12 @@ Creates a summary CSV file.
 
 if __name__ == "__main__":
     
+    import os
+    
     import single_hour_for_annual
     import flux_model
     import inputs
     import field
-    import os
     
     
     main_case_name = "radial_daggett_50MW_SP_Field"

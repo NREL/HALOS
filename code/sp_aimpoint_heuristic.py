@@ -4,9 +4,10 @@ HALOS SolarPILOT API aimpoint heuristic
 
 This module contains aimpoint heuristics using SolarPILOT flux calculations.
 """
-import sp_module
+
 import numpy as np
 
+import sp_module
 
 def maximum_violation_heur(helios_flux, flux_limit, print_messages = False):
     """
