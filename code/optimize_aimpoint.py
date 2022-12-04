@@ -15,15 +15,25 @@ import sol_pos
 
 ### Methods or objective and constraint rules
 EPSILON = 1e-8
+# def objectiveRule(model):
+#         return sum(  #m 
+#                     sum( #h
+#                         sum(#a
+#                             model.obj_by_point[m] * model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
+#                             for a in model.aimpoints
+#                         ) for h in model.heliostats
+#                     ) for m in model.measurement_points
+#                 )
+
 def objectiveRule(model):
         return sum(  #m 
-                    sum( #h
-                        sum(#a
-                            model.obj_by_point[m] * model.surface_area[m]* model.flux[h,m,a] * model.select_aimpoint[h,a]
-                            for a in model.aimpoints
-                        ) for h in model.heliostats
-                    ) for m in model.measurement_points
+                    model.obj_by_point[m] * model.surface_area[m]* model.incident_flux[m]
+                    for m in model.measurement_points
                 )
+
+
+def fluxCalcRule(model, m):
+    return model.incident_flux[m] == sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats)
 
 
 def aimSelectRule(model,h):
@@ -46,17 +56,24 @@ def fluxUBRule(model,m):
         return pe.Constraint.Feasible
     if sum(sum(model.flux[h,m,a] for a in model.aimpoints) for h in model.heliostats) < EPSILON:
         return pe.Constraint.Feasible
-    return sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) <= model.flux_ubs[m]
+    return model.incident_flux[m] <= model.flux_ubs[m]
+    # return sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) <= model.flux_ubs[m]
+
+
+# def fluxDiffRule(model,m,mp):
+#     if m not in model.neighboring_points[mp]:
+#         return pe.Constraint.Feasible
+#     return (
+#             sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) -
+#             sum(sum(model.flux[h,mp,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) 
+#             <= model.flux_diff
+#             )
 
 
 def fluxDiffRule(model,m,mp):
     if m not in model.neighboring_points[mp]:
         return pe.Constraint.Feasible
-    return (
-            sum(sum(model.flux[h,m,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) -
-            sum(sum(model.flux[h,mp,a] * model.select_aimpoint[h,a] for a in model.aimpoints) for h in model.heliostats) 
-            <= model.flux_diff
-            )
+    return (model.incident_flux[m] - model.incident_flux[mp] <= model.flux_diff)
 
 
 def orderedDefocusingRule(model, h, hp):
@@ -64,10 +81,22 @@ def orderedDefocusingRule(model, h, hp):
         return model.defocus[h] >= model.defocus[hp]
     return pe.Constraint.Feasible
 
+
 def groupingRule(model, h, hp, a):
     if h < hp and model.group_assignment[h] == model.group_assignment[hp]:
         return model.select_aimpoint[h,a] == model.select_aimpoint[hp,a]
     return pe.Constraint.Feasible
+
+
+def columnDifferenceRule(model, c, cp):
+    if c != cp:
+        return (
+            sum(model.incident_flux[m] for m in model.measurement_points_in_column[c]) 
+            >= sum(model.min_fraction * model.incident_flux[m] for m in model.measurement_points_in_column[cp]) 
+        )
+    return pe.Constraint.Feasible
+    
+
 
 def neighborRule(model, m):
     """
@@ -77,6 +106,12 @@ def neighborRule(model, m):
         yield m+model.num_cols
     if m-model.num_cols <= 0:
         yield m-model.num_cols
+
+
+def columnInitRule(model, c):
+    for i in range(model.num_rows):
+        yield c+(i*model.num_cols)
+
 
 class AimpointOptimizer(object):
     def __init__(self, flux_model, params={"section_id":1,"num_sections":1,
@@ -123,9 +158,14 @@ class AimpointOptimizer(object):
         first_col = col_spacing // 2
         for r in range(aim_rows):
             for c in range(aim_cols):
-                pt = (first_row + (r*row_spacing)) * m_rows + (first_col + (c*col_spacing)) + 1
+                pt = (first_row + (r*row_spacing)) * m_cols + (first_col + (c*col_spacing)) + 1
                 measurement_points.append(pt)
         self.model.check_measurement_points = pe.Set(initialize = measurement_points)
+
+
+    def generateColumnsSubset(self):
+        self.model.columns = pe.Set(initialize=range(1,self.flux_model.receiver.params["pts_per_len_dim"]+1))
+        self.model.measurement_points_in_column = pe.Set(self.model.columns, initialize=columnInitRule)
 
 
     def generateSets(self):
@@ -140,6 +180,7 @@ class AimpointOptimizer(object):
                 )  #M
         
         self.generateMeasurementSubset()
+        self.generateColumnsSubset()
 
         if self.flux_model.receiver.params["use_flux_gradient"] == 1:
             self.model.neighboring_points = pe.Set(self.model.measurement_points, initialize=neighborRule)
@@ -264,6 +305,7 @@ class AimpointOptimizer(object):
             self.model.flux_diff = pe.Param(mutable=True, initialize = self.flux_model.receiver.params["gradient_limit"]/self.params["num_sections"])
         self.model.surface_area = pe.Param(self.model.measurement_points, initialize = surface_area)
         self.model.obj_by_point = pe.Param(self.model.measurement_points, initialize = obj_by_point)
+        self.model.min_fraction = pe.Param(initialize=self.flux_model.receiver.params["min_col_fraction"])
         if self.params["ordered_defocus"]:
             self.getHeliostatOrdering(self.params["order_method"])
         self.model.flux_constraint_limit = self.params["flux_constraint_limit"]
@@ -291,6 +333,7 @@ class AimpointOptimizer(object):
     def generateVariables(self):
         self.model.select_aimpoint = pe.Var(self.model.heliostats * self.model.aimpoints, domain=pe.Binary)
         self.model.defocus = pe.Var(self.model.heliostats, domain=pe.NonNegativeReals, bounds=(0,1))
+        self.model.incident_flux = pe.Var(self.model.measurement_points, domain=pe.NonNegativeReals)
 
     def getHeliostatOrdering(self, method="eff"):
         """
@@ -333,8 +376,12 @@ class AimpointOptimizer(object):
         if self.params["ordered_defocus"]:
             self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats, rule=orderedDefocusingRule)
         if self.flux_model.settings["heliostat_group_size"] > 1: 
-            self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
+            self.model.group_decisions_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
             print("group cons made")
+        if self.model.min_fraction > EPSILON:
+            self.model.flux_calc_con = pe.Constraint(self.model.measurement_points, rule=fluxCalcRule)
+            self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
+
 
     def createFullProblem(self):
         """
