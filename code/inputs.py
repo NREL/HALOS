@@ -110,6 +110,10 @@ def getReceiverFromFile(filenames,solar_field):
         d["gradient_limit"] = float(d["gradient_limit"])
     except KeyError:
         d["use_flux_gradient"] = 0
+    try: 
+        d["min_col_fraction"] = float(d["min_col_fraction"])
+    except KeyError:
+        d["min_col_fraction"] = 0.0
     if d["receiver_type"] == "Flat plate":
         r = geometry.FlatPlateReceiver(d["tow_height"],d)
         print("Flat Plate Receiver")
