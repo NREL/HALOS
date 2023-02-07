@@ -152,29 +152,30 @@ The receiver input csv has the following parameters
 
 | Parameter | Data Type | Description  | Default Value (if any) | 
 | --- | --- | --- | --- |
-| tow_height | Integer | Tower Height  | 150 |
-| length | Integer | Receiver horizontal Length | 21 |
-| height | Integer | Receiver height | 17 |
-| diameter | Integer | Receiver diameter | 10.38 |
+| tow_height | Floating-point number | Tower Height  | 150 |
+| length | Floating-point number | Receiver horizontal Length | 21 |
+| height | Floating-point number | Receiver height | 17 |
+| diameter | Floating-point number | Receiver diameter | 10.38 |
 | pts_per_ht_dim | Integer | Number of rows in receiver measurement point grid | 20 |
 | pts_per_len_dim | Integer | Number of columns in receiver measurement point grid | 20 |
-| zenith_deg | Integer | Receiver zenith angle - degrees | 90 |
-| azimuth_deg | Integer | Receiver azimuth angle - degrees | 180 |
+| zenith_deg | Floating-point number | Receiver zenith angle - degrees | 90 |
+| azimuth_deg | Floating-point number | Receiver azimuth angle - degrees | 180 |
 | rec_cent_offset_x | Integer | Receiver offset from center - x_axis | 0 |
 | rec_cent_offset_y | Integer | Receiver offset from center - y_axis | 0 |
 | rec_cent_offset_z | Integer | Receiver offset from center - z_axis | 0 |
 | aim_rows | Integer | Number of Aimpoint rows or number of aimpoints per column | 7 |
 | aim_cols | Integer | Number of Aimpoint columns or number of aimpoints per row | 7 |
-| power_rating | Integer | Solar field design power - Receiver power rating (MWt) | 5.00E+07 |
+| power_rating | Floating-point number | Solar field design power - Receiver power rating (MWt) | 5.00E+07 |
 | receiver_type | String | Receiver geometry (Flat plate/External cylindrical) | External cylindrical |
-| field_dni | Integer | Design point DNI for field generation (W/m^2) | 950 |
-| flux_dni | Integer | Design point DNI for flux calculation (W/m^2) | 950 |
-| mirror_len | Integer | Length of Heliostat (m) | 12.2 |
-| mirror_ht | Integer | height of Heliostat (m) | 12.2 |
-| mirror_area | Integer | Area of Heliostat (m^2) | 148.84|
-| flux_ub | Integer | Maximum allowable flux (kW/m^2) | 1000 |
-| flux_lb | Integer | Flux lower bound (kW/m^2) | 0 |
+| field_dni | Floating-point number | Design point DNI for field generation (W/m^2) | 950 |
+| flux_dni | Floating-point number | Design point DNI for flux calculation (W/m^2) | 950 |
+| mirror_len | Floating-point number | Length of Heliostat (m) | 12.2 |
+| mirror_ht | Floating-point number | height of Heliostat (m) | 12.2 |
+| mirror_area | Floating-point number | Area of Heliostat (m^2) | 148.84|
+| flux_ub | Floating-point number | Maximum allowable flux (kW/m^2) | 1000 |
+| flux_lb | Floating-point number | Flux lower bound (kW/m^2) | 0 |
 | n_circulation | Integer | Number of flow circulations (Assumes flow enters from top ) | 5 |
+| min_col_fraction | Float | Ratio of flux from lowest to highest column on receiver | 0.0 |
 
 Note that "flux_ub," "flux_lb," and "n_circulation" are overridden if a filepath is provided to a user-specific flux limit file via "flux_limit_filename" in the Case Settings file.
 
