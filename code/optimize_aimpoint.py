@@ -367,6 +367,7 @@ class AimpointOptimizer(object):
       
     def genConstraintsBinOnly(self): 
         self.model.select_con = pe.Constraint(self.model.heliostats, rule=aimSelectRule)
+        self.model.flux_track = pe.Constraint(self.model.measurement_points,rule=fluxCalcRule)
         if self.params["aimpoint_cons_only"]:
             self.model.flux_ub_con = pe.Constraint(self.model.check_measurement_points, rule=fluxUBRule)    
         else:
@@ -377,7 +378,6 @@ class AimpointOptimizer(object):
             self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats, rule=orderedDefocusingRule)
         if self.flux_model.settings["heliostat_group_size"] > 1: 
             self.model.group_decisions_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
-            print("group cons made")
         if self.model.min_fraction > EPSILON:
             self.model.flux_calc_con = pe.Constraint(self.model.measurement_points, rule=fluxCalcRule)
             self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
@@ -442,13 +442,16 @@ class AimpointOptimizer(object):
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
-        self.gap = self.opt_results.solution[0].gap
+        try: 
+            self.gap = self.opt_results.solution[0].gap
+        except IndexError:
+            raise Exception("model is infeasible or unbounded.")
         self.model.solutions.load_from(self.opt_results)
         
             
     def processOutputs(self):
         """
-        Processess outputs of aimpoint optimization model
+        Processes outputs of aimpoint optimization model
 
         Returns
         -------
