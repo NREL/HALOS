@@ -94,6 +94,7 @@ def getReceiverFromFile(filenames,solar_field):
     r : Receiver object
 
     """
+    print_flux_limits_to_file = False  #TODO add as an option in settings
     d = readParamFile(filenames["receiver_filename"])
     if "pts_per_dim" in d.keys():
         d["pts_per_dim"] = int(d["pts_per_dim"])
@@ -110,23 +111,24 @@ def getReceiverFromFile(filenames,solar_field):
         d["gradient_limit"] = float(d["gradient_limit"])
     except KeyError:
         d["use_flux_gradient"] = 0
+    try: 
+        d["min_col_fraction"] = float(d["min_col_fraction"])
+    except KeyError:
+        d["min_col_fraction"] = 0.0
     if d["receiver_type"] == "Flat plate":
         r = geometry.FlatPlateReceiver(d["tow_height"],d)
         print("Flat Plate Receiver")
     elif d["receiver_type"] == "External cylindrical":
         r = geometry.CylindricalPlateReceiver(d["tow_height"],d,solar_field)
     if filenames.get("flux_limit_filename") is not None:
-        import pandas
         r.flux_upper_limits = readFluxMapFromCSV(filenames["flux_limit_filename"],d["pts_per_ht_dim"],d["pts_per_len_dim"]).flatten()
         r.flux_lower_limits = numpy.ones_like(r.flux_upper_limits) * d["flux_lb"]
-        df = pandas.DataFrame(r.flux_upper_limits.reshape([d["pts_per_ht_dim"],d["pts_per_len_dim"]]))
-        df.to_csv("flux_limits.csv", index=False)
     elif d["n_circulation"] > 1:
         r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
-    else: 
+    else:  
+        r.generateFixedFluxLimits(d["flux_lb"], d["flux_ub"])
+    if print_flux_limits_to_file:
         import pandas
-        r.flux_upper_limits = numpy.ones(num_points) * d["flux_ub"]
-        r.flux_lower_limits = numpy.ones_like(r.flux_upper_limits) * d["flux_lb"]
         df = pandas.DataFrame(r.flux_upper_limits.reshape([d["pts_per_ht_dim"],d["pts_per_len_dim"]]))
         df.to_csv("flux_limits.csv", index=False)
     if filenames.get("rec_obj_filename") is not None:
