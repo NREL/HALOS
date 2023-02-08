@@ -442,7 +442,10 @@ class AimpointOptimizer(object):
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
-        self.gap = self.opt_results.solution[0].gap
+        try: 
+            self.gap = self.opt_results.solution[0].gap
+        except IndexError:
+            raise Exception("model is infeasible or unbounded.")
         self.model.solutions.load_from(self.opt_results)
         
             
