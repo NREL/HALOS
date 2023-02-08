@@ -378,7 +378,6 @@ class AimpointOptimizer(object):
             self.model.ordered_defocusing_con = pe.Constraint(self.model.heliostats * self.model.heliostats, rule=orderedDefocusingRule)
         if self.flux_model.settings["heliostat_group_size"] > 1: 
             self.model.group_decisions_con = pe.Constraint(self.model.heliostats * self.model.heliostats * self.model.aimpoints, rule=groupingRule)
-            print("group cons made")
         if self.model.min_fraction > EPSILON:
             self.model.flux_calc_con = pe.Constraint(self.model.measurement_points, rule=fluxCalcRule)
             self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
