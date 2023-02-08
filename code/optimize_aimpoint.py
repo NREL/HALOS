@@ -367,6 +367,7 @@ class AimpointOptimizer(object):
       
     def genConstraintsBinOnly(self): 
         self.model.select_con = pe.Constraint(self.model.heliostats, rule=aimSelectRule)
+        self.model.flux_track = pe.Constraint(self.model.measurement_points,rule=fluxCalcRule)
         if self.params["aimpoint_cons_only"]:
             self.model.flux_ub_con = pe.Constraint(self.model.check_measurement_points, rule=fluxUBRule)    
         else:
