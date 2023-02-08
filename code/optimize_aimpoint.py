@@ -448,7 +448,7 @@ class AimpointOptimizer(object):
             
     def processOutputs(self):
         """
-        Processess outputs of aimpoint optimization model
+        Processes outputs of aimpoint optimization model
 
         Returns
         -------
