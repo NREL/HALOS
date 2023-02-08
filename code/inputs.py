@@ -127,10 +127,9 @@ def getReceiverFromFile(filenames,solar_field):
         df.to_csv("flux_limits.csv", index=False)
     elif d["n_circulation"] > 1:
         r.generateDynamicFluxLimits(d["flux_lb"], d["flux_ub"], d["n_circulation"])
-    else: 
+    else:  
+        r.generateFixedFluxLimits(d["flux_lb"], d["flux_ub"])
         import pandas
-        r.flux_upper_limits = numpy.ones(num_points) * d["flux_ub"]
-        r.flux_lower_limits = numpy.ones_like(r.flux_upper_limits) * d["flux_lb"]
         df = pandas.DataFrame(r.flux_upper_limits.reshape([d["pts_per_ht_dim"],d["pts_per_len_dim"]]))
         df.to_csv("flux_limits.csv", index=False)
     if filenames.get("rec_obj_filename") is not None:
