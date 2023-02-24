@@ -143,7 +143,7 @@ The case_setting file contains the following parameters.
 | num_sections | Integer | Number of field subsections | 8 |
 | section_method | String | Method for field division into subsections (angle/distance) | angle |
 | use_sp_flux | Integer | Boolean (1/0): Use SolarPILOT to calculate Flux | 1 |
-| use_sp_field | Integer | Boolean (1/0): Use SolarPILOT to generate field | 1 |
+| use_sp_field | Integer | Boolean (1/0): Use SolarPILOT to generate field; if 1, field characteristics will be output to outputs/SolarPILOT_field.csv | 1 |
 | hour_idx | Integer | Simulation hour index from weather file | 4311 |
 | heliostat_group_size | Integer | Heliostat group size to focus on same aimpoint | 4 |
 
