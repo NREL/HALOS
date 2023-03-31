@@ -66,7 +66,7 @@ class Field(object):
         self.coords = numpy.array([self.x,self.y,self.z]).transpose()
         self.num_heliostats = len(self.x)
         
-    def GetFieldFromSP(self,filenames, params):
+    def GetFieldFromSP(self, filenames, params):
         """
         Use SolarPILOT to get field
 
@@ -102,7 +102,7 @@ class Field(object):
         except KeyError:
             print("Warning: no sections mentioned in field parameters.")
             
-    def GetFieldFromFile(self,filename, params):
+    def GetFieldFromFile(self, filename, params):
         """
         Reads field CSV file for coordinates
 
