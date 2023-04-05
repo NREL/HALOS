@@ -44,8 +44,8 @@ if __name__ == "__main__":
     hour_id = int(args[1])
 
     
-    main_case_name = "radial_daggett_50MW"
-    case_filename = "./../case_inputs/radial_50_ca_case.csv"
+    main_case_name = "flat_daggett_obj_50MW"
+    case_filename = "./../case_inputs/flat_50_ca_obj_case.csv"
     filenames = inputs.readCaseFile(case_filename)
     settings = inputs.readSettingsFile(filenames["settings"])
     solar_field = field.Field(filenames,params=settings, use_sp_field = settings["use_sp_field"])
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     weather_data = flux_model.ReadWeatherFile(filenames["weather_filename"])
     sp_flux = sp_module.SP_Flux(filenames, field = solar_field)
     #for i in range(2): 
-    case_name = str(hour_id) + main_case_name
+    case_name = str(hour_id) + "_" + main_case_name
     print(case_name)
     obj_value,num_defocused_heliostats, solve_time = runCaseAnnual(case_name, case_filename, hour_id = hour_id, decomp = True, parallel = True)
     outputs = sp_flux.run_sp_case(weather_data, case_name, hour_id = hour_id, sp_aimpoint_heur=True)
