@@ -4,6 +4,7 @@ HALOS Plotting Module
 """
 
 import matplotlib.pyplot as plt
+import matplotlib.axes as axes
 import matplotlib.cm
 import scipy
 import scipy.stats
@@ -180,9 +181,21 @@ def plot_optimal_flux_heatmap(outputs,fname):
     None.
 
     """
+    
+    plot_height = outputs.flux_model.receiver.params['height']
+    if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
+        plot_width = outputs.flux_model.receiver.params['length']
+    elif  outputs.flux_model.receiver.params['receiver_type'] == 'External cylindrical':
+        plot_width = 360
+
     flux = outputs.flux_map.reshape([outputs.flux_model.receiver.params["pts_per_ht_dim"],outputs.flux_model.receiver.params["pts_per_len_dim"]])
-    plt.imshow(flux, cmap='hot',vmin=0,vmax=1000)
+    plt.imshow(flux, cmap='hot',vmin=0,vmax=1000, aspect = 'auto', extent = (-plot_width/2, plot_width/2, 0, plot_height))
     plt.colorbar()
+    plt.ylabel('Receiver vertical position [m]')
+    if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
+        plt.xlabel('Receiver horizontal position [m]')
+    elif outputs.flux_model.receiver.params['receiver_type'] == 'External cylindrical':
+        plt.xlabel('Receiver circumferential position [deg]')
     plt.savefig("./../outputs/"+fname)
     plt.cla()
     plt.clf()
@@ -202,6 +215,12 @@ def plot_flux_violation(outputs,fname):
     Plots heatmap
 
     """
+    plot_height = outputs.flux_model.receiver.params['height']
+    if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
+        plot_width = outputs.flux_model.receiver.params['length']
+    elif  outputs.flux_model.receiver.params['receiver_type'] == 'External cylindrical':
+        plot_width = 360
+        
     pts_ht = outputs.flux_model.receiver.params["pts_per_ht_dim"]
     pts_len = outputs.flux_model.receiver.params["pts_per_len_dim"]
     flux_ub = outputs.flux_model.receiver.flux_upper_limits
@@ -210,8 +229,13 @@ def plot_flux_violation(outputs,fname):
     for m in range(len(flux)):
         flux_violation[m] = max(0.0, flux[m]-flux_ub[m])
     flux_violation = np.array(flux_violation).reshape(pts_ht,pts_len)
-    plt.imshow(flux_violation, cmap='hot')
+    plt.imshow(flux_violation, cmap='hot', aspect = 'auto', extent = (-plot_width/2, plot_width/2, 0, plot_height))
     plt.colorbar()
+    plt.ylabel('Receiver vertical position [m]')
+    if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
+        plt.xlabel('Receiver horizontal position [m]')
+    elif outputs.flux_model.receiver.params['receiver_type'] == 'External cylindrical':
+        plt.xlabel('Receiver circumferential position [deg]')
     plt.savefig("./../outputs/"+fname)
     plt.cla()
     plt.clf()
@@ -239,6 +263,14 @@ def plot_flux_slack(outputs,fname):
     Plots heatmap
 
     """
+    
+    plot_height = outputs.flux_model.receiver.params['height']
+    if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
+        plot_width = outputs.flux_model.receiver.params['length']
+    elif  outputs.flux_model.receiver.params['receiver_type'] == 'External cylindrical':
+        plot_width = 360
+        
+    
     pts_ht = outputs.flux_model.receiver.params["pts_per_ht_dim"]
     pts_len = outputs.flux_model.receiver.params["pts_per_len_dim"]
     flux_ub = outputs.flux_model.receiver.flux_upper_limits
@@ -247,8 +279,13 @@ def plot_flux_slack(outputs,fname):
     for m in range(len(flux)):
         flux_slack[m] = max(0.0, flux_ub[m]-flux[m])
     flux_slack = np.array(flux_slack).reshape(pts_ht,pts_len)
-    plt.imshow(flux_slack, cmap='hot')
+    plt.imshow(flux_slack, cmap='hot', aspect = 'auto', extent = (-plot_width/2, plot_width/2, 0, plot_height))
     plt.colorbar()
+    plt.ylabel('Receiver vertical position [m]')
+    if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
+        plt.xlabel('Receiver horizontal position [m]')
+    elif outputs.flux_model.receiver.params['receiver_type'] == 'External cylindrical':
+        plt.xlabel('Receiver circumferential position [deg]')
     plt.savefig("./../outputs/"+fname)
     plt.cla()
     plt.clf()
@@ -285,6 +322,7 @@ def plot_optimal_aimpoint_allocation(outputs,fname):
     """
     x = outputs.flux_model.field.x.flatten()
     y = outputs.flux_model.field.y.flatten()
+    
     colors = plt.scatter(x,y,s=6,c=outputs.aimpoint_select_map,cmap='Set1')
     plt.savefig("./../outputs/"+fname, dpi= 2000)
     plt.cla()
@@ -302,6 +340,7 @@ def plot_optimal_aimpoint_guide(outputs,fname):
     """
     x = outputs.flux_model.receiver.aim_x.flatten()
     y = outputs.flux_model.receiver.aim_z.flatten()
+    
     colors = plt.scatter(x,y,s=6,c=range(1,outputs.flux_model.receiver.num_aimpoints+1),cmap='Set1')
     plt.savefig("./../outputs/"+fname, dpi= 2000)
     plt.cla()
