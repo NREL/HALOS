@@ -439,6 +439,9 @@ class AimpointOptimizer(object):
         elif self.solver == "cplex":
             opt.options["mipgap"] = mipgap
             opt.options["timelimit"] = timelimit
+        elif self.solver == "xpress_direct":
+            opt.options["miprelstop"] = mipgap
+            opt.options["maxtime"] = timelimit
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
