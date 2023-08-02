@@ -167,7 +167,7 @@ def plot_3d_results(best_sol, best_obj, objs, est_objs, bounds, lb, ub, num_pts,
     plot_results_vector(x, [v1, v2, v3, v4, bounds], ["x1", "x2", "x3", "x1+x2+x3", "bounds"], fname)
 
 
-def plot_optimal_flux_heatmap(outputs,fname):
+def plot_optimal_flux_heatmap(outputs, fname, save_csv = True):
     """
     Plots Optimized Flux Map - Uses output of Optimization Model
 
@@ -189,7 +189,11 @@ def plot_optimal_flux_heatmap(outputs,fname):
         plot_width = 360
 
     flux = outputs.flux_map.reshape([outputs.flux_model.receiver.params["pts_per_ht_dim"],outputs.flux_model.receiver.params["pts_per_len_dim"]])
-    plt.imshow(flux, cmap='hot',vmin=0,vmax=1000, aspect = 'auto', extent = (-plot_width/2, plot_width/2, 0, plot_height))
+    
+    #Save flux values to csv in outputs folder
+    if save_csv:
+        np.savetxt("./../outputs/"+fname+"_values.csv", flux, delimiter = ",")
+                  
     plt.colorbar()
     plt.ylabel('Receiver vertical position [m]')
     if outputs.flux_model.receiver.params['receiver_type'] == 'Flat plate':
