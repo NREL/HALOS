@@ -383,7 +383,17 @@ class AimpointOptimizer(object):
             self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
 
 
-    def createFullProblem(self):
+    def fixAllAimpoints(self, fixed_aim_idx=7):
+        """
+        Fixed all heliostats to a single aimpoint.
+        """
+        for h in self.model.heliostats:
+            self.model.aimpoint_select[h,fixed_aim_idx].value = 1
+            self.model.aimpoint_select[h,fixed_aim_idx].fixed = True
+
+
+
+    def createFullProblem(self, fixed_aim_idx=None):
         """
         Creates full optimization problem for solver
 
@@ -397,6 +407,8 @@ class AimpointOptimizer(object):
         self.generateVariables()
         self.setObjective()
         self.genConstraintsBinOnly()
+        if fixed_aim_idx != None:
+            self.fixAllAimpoints(fixed_aim_idx)
 
 
     def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
