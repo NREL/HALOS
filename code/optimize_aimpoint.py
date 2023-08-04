@@ -388,8 +388,8 @@ class AimpointOptimizer(object):
         Fixed all heliostats to a single aimpoint.
         """
         for h in self.model.heliostats:
-            self.model.aimpoint_select[h,fixed_aim_idx].value = 1
-            self.model.aimpoint_select[h,fixed_aim_idx].fixed = True
+            self.model.select_aimpoint[h,fixed_aim_idx].value = 1
+            self.model.select_aimpoint[h,fixed_aim_idx].fixed = True
 
 
 
