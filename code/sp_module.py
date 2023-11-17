@@ -40,7 +40,7 @@ class SolarPilot:
         reader = csv.reader(open(self.filenames["receiver_filename"],'r'))
         for line in reader:    
             if len(line)>1:
-               self.receiver_data[line[0]] = line[1]
+                self.receiver_data[line[0]] = line[1]
                
     def assign_inputs(self, weather_data = None, hour_id = None, dni = None, 
                       not_filter_helio = False, center_aimpoint = True, read_weather = False):
@@ -148,6 +148,7 @@ class SolarPilot:
             plt.xlabel('Receiver circumferential position [deg]')
         plt.tight_layout()
         if name is not None:
+            plt.title(name)
             plt.savefig("./../outputs/"+name)
         
 class SP_Field(SolarPilot):
