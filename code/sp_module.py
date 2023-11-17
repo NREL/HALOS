@@ -511,6 +511,78 @@ class SP_Flux(SolarPilot):
                 self.plot_flux_map(after_flux, name = (case_name+"_After_defocus_SP"))
         return results
     
+    
+    def sp_flux_with_opt_aim(self, case_filename, results, weather_data = None, case_name = None, hour_id = None, dni = None):
+        import inputs
+        import numpy as np
+        
+        #Read input parameters from case files, assign them to SolarPILOT object
+        filenames = inputs.readCaseFile(case_filename)
+        self.assign_inputs(weather_data, hour_id, dni, read_weather=True)
+        tht = cp.data_get_number(self.r, 'solarfield.0.tht') #get tower height
+        
+        #Retrieve aimpoint info from results of optimization
+        aimpoint_select_map = results.aimpoint_select_map
+        aimpoints = results.flux_model.receiver.aimpoints
+        
+        #change heliostat aimpoint map to a list
+        aimpoint_select_map = list(aimpoint_select_map)
+        
+        #Extract aimpoint coordinates from aimpoint array
+        aim_x = list(aimpoints[:,0])
+        aim_y = list(aimpoints[:,1])
+        aim_z = list(aimpoints[:,2])
+
+        #Create lists of aimpoints for all heliostats by coupling aimpoint map with aimpoints, defoucsed heliostats are aimed at 100
+        aim_map_x = [aim_x[int(index-1)] if int(index)>=1 else 100 for index in aimpoint_select_map]
+        aim_map_y = [aim_y[int(index-1)] if int(index)>=1 else 100 for index in aimpoint_select_map]
+        aim_map_z = [aim_z[int(index-1)] if int(index)>=1 else 100 for index in aimpoint_select_map]
+        
+        #Create heliostat layout
+        assert cp.assign_layout(self.r,self.helio_data) 
+#         layout = cp.get_layout_info(self.r)
+        pre_details = cp.detail_results(self.r)
+
+        #Get heliostat id's
+        ids = list(pre_details['id'])
+        
+        assert cp.data_set_number(self.r,'fluxsim.0.sigma_limit_x',0) #Set minimum offset from edge of receiver to 0 in x
+        assert cp.data_set_number(self.r,'fluxsim.0.sigma_limit_y',0) #Set minimum offset from edge of receiver to 0 in (vertical direction)
+        assert cp.data_set_string(self.r,'fluxsim.0.aim_method','Keep existing') #Keep exisiting aiming strategy to allow modifying aimpoints
+
+        #Create flux map with SolarPILOT's aiming
+#         cp.simulate(self.r)
+#         sp_flux_map = cp.get_fluxmap(self.r)
+#         sp_flux_map_array = np.array(sp_flux_map)
+#         self.plot_flux_map(sp_flux_map_array, name=case_name+'_sp_only_fluxmap')
+
+        #Modify SolarPILOT aimpoints
+        helio_dict = {'id':ids, 'aimpoint-x':aim_map_x,'aimpoint-y':aim_map_y,'aimpoint-z':aim_map_z}
+        assert cp.modify_heliostats(self.r,helio_dict)
+        #assert cp.data_set_string(self.r, 'fluxsim.0.flux_model', 'SolTrace')
+        #assert cp.data_set_number(self.r, 'fluxsim.0.min_rays', 100000)
+        
+        #Resimulate using optimized aimpoints
+        assert cp.simulate(self.r,update_aimpoints = False)
+        
+        #Save heliostat details after using optimized aimpoints
+        post_details = cp.detail_results(self.r)
+        post_details.to_csv("./../outputs/"+"sp_aimpoints_mcf.csv")
+
+        #Get SP fluxmap with optimized aimpoints
+        flux_map_cp = cp.get_fluxmap(self.r)
+        flux_map_array = np.array(flux_map_cp)
+
+        #Save optimized aimpoint fluxmap values
+        numpy.savetxt("./../outputs/"+case_name+"_sp_flux_values.csv", flux_map_array, delimiter = ",")
+
+        #Plot optimized aimpoint fluxmap
+        self.plot_flux_map(flux_map_array, name=case_name+'_sp_flux_with_opt_aim')
+
+#         results = cp.detail_results(self.r)
+#         summary = cp.summary_results(self.r)  
+    
+        cp.data_free(self.r)
                         
 if __name__ == "__main__":
     import inputs
