@@ -109,6 +109,14 @@ class SolarPilot:
         except KeyError:
             cp.data_set_number(self.r, 'fluxsim.0.x_res', float(self.receiver_data["pts_per_dim"]))
             cp.data_set_number(self.r, 'fluxsim.0.y_res', float(self.receiver_data["pts_per_dim"]))
+        try:
+            cp.data_set_number(self.r, 'receiver.0.therm_loss_base', float(self.receiver_data["therm_loss_base"]))
+        except KeyError:
+            pass
+        try:
+            cp.data_set_number(self.r, 'receiver.0.piping_loss_coef', float(self.receiver_data["piping_loss_coef"]))
+        except KeyError:
+            pass
         if hour_id is not None:
             if read_weather == True:
                 weather_data = flux_model.ReadWeatherFile(self.filenames["weather_filename"])
