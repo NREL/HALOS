@@ -26,6 +26,7 @@ def ReadWeatherFile(weather_file, get_angles=False):
         weather_data, a dictionary with categorical and time-series data
     """
     weather_data = {"dni": numpy.zeros(8760, dtype=float), 
+                    "dni_cs": numpy.zeros(8760, dtype=float),
                     "year": numpy.zeros(8760, dtype=int), 
                     "month": numpy.zeros(8760, dtype=int), 
                     "day": numpy.zeros(8760, dtype=int), 
@@ -53,10 +54,18 @@ def ReadWeatherFile(weather_file, get_angles=False):
         dni_idx = keys.index("Beam")
     else:
         dni_idx = keys.index("DNI")
+    try: 
+        dni_cs_idx = keys.index("Clear sky DNI")
+    except ValueError:
+        dni_cs_idx = None
     #Record time-series data
     t = 0
     for line in reader:
         weather_data["dni"][t] = float(line[dni_idx])
+        if dni_cs_idx is not None:
+            weather_data["dni_cs"][t] = float(line[dni_cs_idx])
+        else: 
+            weather_data["dni_cs"][t] = 0.0
         weather_data["year"][t] = int(line[year_idx])
         weather_data["month"][t] = int(line[month_idx])
         weather_data["day"][t] = int(line[day_idx])
@@ -95,6 +104,7 @@ class FluxModel(object):
         else: 
             msg = "No inputs given for DNI."
             raise Exception(msg)
+        self.dni_cs = self.weather_data['dni_cs'][hour_id]
         if use_sp_flux:
             self.get_sp_flux_parallel()
         elif self.read_flux_from_file:
@@ -195,7 +205,7 @@ class FluxModel(object):
         flux = {}
         if self.use_sp_flux:
             for h in self.field.helios_by_section[section_id]:
-                flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni)
+                flux_map = self.sp_flux.get_single_helio_flux(h,self.weather_data,self.hour_id,self.dni_cs)
                 flux[h] = numpy.array(flux_map)
         elif self.read_flux_from_file:
             import inputs
