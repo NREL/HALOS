@@ -132,13 +132,17 @@ class SolarPilot:
         if name is not None:
             plt.savefig("./../outputs/"+name) 
         
-    def plot_flux_map(self, flux, name = None):
+    def plot_flux_map(self, flux, name = None, flip_z_axis = False):
+
         plot_height = float(self.receiver_data["height"])
         if self.receiver_data["receiver_type"] == 'Flat plate':
             plot_width = float(self.receiver_data["length"])
         if self.receiver_data["receiver_type"] == 'External cylindrical':
             plot_width = 360
-            
+        
+        if flip_z_axis: #use for SolarPILOT imports - this is done automatically in HALOS
+            flux = flux[::-1]
+
         im = plt.imshow(flux, aspect = 'auto', extent = (-plot_width/2, plot_width/2, 0, plot_height))
         plt.colorbar(im)
         plt.ylabel('Receiver vertical position [m]')
