@@ -72,7 +72,7 @@ def subproblemSolve(kwargs):
     d = ao.processOutputs()
     return d
 
-def solveDecomposedModel(case_name, case_filename,hour_id = None, 
+def solveDecomposedModel(case_name, case_filename, hour_id = None, 
                          parallel=False, ordered_defocus=False,
                          order_method="eff"):
     """
@@ -177,6 +177,7 @@ def runHourlyCase(main_case_name, case_name, case_filename, hour_id = None, deco
             csv_writer = writer(write_obj)
             row1 = [case_name,str(results.obj_value),str(results.num_defocused_heliostats), str(results.solve_time),str(results.new_obj)] # change according to which values you want to return
             csv_writer.writerow(row1)
+    return results
     
 def runSPHourlyCase(main_case_name,case_name, case_filename, hour_id = None, append = False, weather_data = None, sp_aimpoint_heur = True):
     """
@@ -224,3 +225,4 @@ def runSPHourlyCase(main_case_name,case_name, case_filename, hour_id = None, app
         ofile.write(case_name+","+str(outputs["obj_value"])+","+str(outputs["num_defocus"])
                     +","+str(outputs["max_flux"])+"\n")
         ofile.close()
+    return outputs
