@@ -22,8 +22,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    case_filename = "./../case_inputs/flat_50_ca_case.csv"
-    case_name = "flat_daggett_50"
+    case_filename = "./../case_inputs/flat_1mw_ca_case.csv"
+    case_name = "flat_daggett_1mw"
     filenames = inputs.readCaseFile(case_filename)
     settings = inputs.readSettingsFile(filenames["settings"])
     results = solve_aim_model.runHourlyCase(case_name, case_name, case_filename, hour_id=settings["hour_idx"], decomp = True, parallel = True) #Save results of optimization model
@@ -37,8 +37,8 @@ if __name__ == "__main__":
 
     path = "./../outputs/" #Insert path to HALOS outputs folder
 
-    halos_flux = np.loadtxt(path + "flat_daggett_50_fluxmap_values.csv", delimiter = ',') #Load halos fluxmap values
-    sp_flux = np.loadtxt(path + 'flat_daggett_50_sp_flux_values.csv', delimiter = ',') #Load SolarPILOT fluxmap values
+    halos_flux = np.loadtxt(path + "flat_daggett_1mw_fluxmap_values.csv", delimiter = ',') #Load halos fluxmap values
+    sp_flux = np.loadtxt(path + 'flat_daggett_1mw_opt_sp_flux_values.csv', delimiter = ',') #Load SolarPILOT fluxmap values
     diff = sp_flux-halos_flux #Difference between HALOS and SolarPILOT fluxmaps
 
     #Plot fluxmap of difference between SP and HALOS
