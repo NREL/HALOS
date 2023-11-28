@@ -23,7 +23,7 @@ def runCaseAnnual(case_name, case_filename, hour_id = None, decomp = False, para
     if decomp:
         results = solve_aim_model.solveDecomposedModel(case_name, case_filename, hour_id, parallel)
     else: 
-        results = solve_aim_model.solveModelDirectly(case_name, case_filename)
+        results = solve_aim_model.solveModelDirectly(case_name, case_filename, hour_id)
     if plots:
         results.plotOutputs(case_name)
     if print_outputs:

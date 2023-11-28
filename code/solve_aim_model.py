@@ -10,13 +10,13 @@ import inputs
 import optimize_aimpoint
 import process_aimpoint_outputs
 
-def solveModelDirectly(case_name, case_filename):
+def solveModelDirectly(case_name, case_filename, hour_id = None):
     """
     Solve complete problem without decomp
 
     """
     t_start= time.time()
-    fm = inputs.getFullFluxModelFromFiles(case_filename)
+    fm = inputs.getFullFluxModelFromFiles(case_filename, hour_id)
     ao_params = {"section_id":1,"num_sections":1,"hour_idx":fm.settings["hour_idx"],"aimpoint_cons_only":False}
     ao = optimize_aimpoint.AimpointOptimizer(fm,ao_params)
     elapsed_1 = time.time()-t_start
