@@ -132,7 +132,7 @@ class AimpointOptimizer(object):
         self.params = params
         self.flux_model = flux_model
         self.model = pe.ConcreteModel()
-        self.params["flux_constraint_limit"] = 500 /params["num_sections"]
+        self.params["flux_constraint_limit"] = self.flux_model.receiver.params["flux_ub"] / (2.0*params["num_sections"])
         self.solver = params.get("solver")
         if self.solver is None:
             self.solver = "cbc"
@@ -383,7 +383,17 @@ class AimpointOptimizer(object):
             self.model.col_difference_con = pe.Constraint(self.model.columns * self.model.columns, rule=columnDifferenceRule)
 
 
-    def createFullProblem(self):
+    def fixAllAimpoints(self, fixed_aim_idx=7):
+        """
+        Fixed all heliostats to a single aimpoint.
+        """
+        for h in self.model.heliostats:
+            self.model.select_aimpoint[h,fixed_aim_idx].value = 1
+            self.model.select_aimpoint[h,fixed_aim_idx].fixed = True
+
+
+
+    def createFullProblem(self, fixed_aim_idx=None):
         """
         Creates full optimization problem for solver
 
@@ -397,6 +407,8 @@ class AimpointOptimizer(object):
         self.generateVariables()
         self.setObjective()
         self.genConstraintsBinOnly()
+        if fixed_aim_idx != None:
+            self.fixAllAimpoints(fixed_aim_idx)
 
 
     def optimize(self, mipgap=0.001, timelimit=300, tee=False, keepfiles=False, warmstart=False):
@@ -439,6 +451,9 @@ class AimpointOptimizer(object):
         elif self.solver == "cplex":
             opt.options["mipgap"] = mipgap
             opt.options["timelimit"] = timelimit
+        elif self.solver == "xpress_direct":
+            opt.options["miprelstop"] = mipgap
+            opt.options["maxtime"] = timelimit
         else:
             raise Exception("invalid solver.")
         self.opt_results = opt.solve(self.model, tee=tee, keepfiles=keepfiles, warmstart=warmstart, load_solutions=False)
