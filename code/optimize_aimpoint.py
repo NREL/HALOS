@@ -132,7 +132,7 @@ class AimpointOptimizer(object):
         self.params = params
         self.flux_model = flux_model
         self.model = pe.ConcreteModel()
-        self.params["flux_constraint_limit"] = 500 /params["num_sections"]
+        self.params["flux_constraint_limit"] = self.flux_model.receiver.params["flux_ub"] / (2.0*params["num_sections"])
         self.solver = params.get("solver")
         if self.solver is None:
             self.solver = "cbc"

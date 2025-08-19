@@ -87,9 +87,11 @@ if __name__ == "__main__":
     import pickle
     import matplotlib.pyplot as plt
 
+    get_flux_from_csv = True
     field_flux_dict_file = "field_flux_image_priority.pkl"
     load_data = False
     if not load_data:
+        import sp_flux
         kwargs = inputs.readCaseFile(case_filename)
         flux_dict = sp_flux.single_helio_flux_dict(kwargs, aim_method='Image size priority')
         with open(field_flux_dict_file, 'wb') as f:
@@ -119,7 +121,7 @@ if __name__ == "__main__":
         
         
     flux_before_defocus = np.array(comb_flux)
-    if True:   ##Get Flux Limits from CSV
+    if get_flux_from_csv:   ##Get Flux Limits from CSV
         import csv
         with open('flux_limits.csv', 'r') as data:
             reader = csv.reader(data)
